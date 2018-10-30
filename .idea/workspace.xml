@@ -2,9 +2,68 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d8f2d630-f601-4439-bd69-f0b75ff2db36" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/connector/SimpleHTTPServer.py" beforeDir="false" afterPath="$PROJECT_DIR$/connector/SimpleHTTPServer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/util/CustomLog.py" beforeDir="false" afterPath="$PROJECT_DIR$/util/CustomLog.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitattributes" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/BWRL-pytorch.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/yj_wn.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/MainInvoker.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/connector/HTTPService.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/connector/SimpleHTTPServer.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/connector/SocketService.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/connector/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/main/GlobalVariable.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/main/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/main/starcraft_ddpg_agent_less_param.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/main/starcraft_modelRL.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl/agent/ddpg.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl/agent/model_ddpg.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl/agent/model_rdpg.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl/agent/rdpg_example.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl/arglist.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl/networks/ac_network.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl/networks/ac_network_model.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl/networks/ac_network_model_rdpg.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl/replay_buffer.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl/utils.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/MultiAgentPolicy.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/asyncAgents/AsyncGlobalAgent.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/asyncAgents/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/asyncAgents/async_a2c.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/asyncAgents/core_async.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/asyncAgents/runAsyncAgent.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/multiAgents/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/multiAgents/multi_a2c.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/multiAgents/multi_ddpg.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/multiAgents/multi_rdpg.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/singleAgents/PG_AC_baseline.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/singleAgents/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/singleAgents/a2c.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/singleAgents/cem.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/singleAgents/ddpg.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/singleAgents/dqn.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/singleAgents/dsc_cnt_ddpg.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/singleAgents/dsc_cnt_ddpgwithPER.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/agents/singleAgents/sarsa.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/callbacks.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/core.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/memory.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/policy.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/processors.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/random.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/rl_optimizer.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/test.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/rl_keras/util.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/util/CustomLog.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/util/__init__.py" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -40,7 +99,7 @@
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="Python Console" value="28" />
-          <entry key="gitignore" value="1" />
+          <entry key="gitignore" value="4" />
           <entry key="log" value="2" />
           <entry key="py" value="823" />
         </counts>
@@ -48,7 +107,7 @@
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="Log" value="2" />
-          <entry key="PLAIN_TEXT" value="1" />
+          <entry key="PLAIN_TEXT" value="4" />
           <entry key="Python" value="851" />
         </counts>
       </usages-collector>
@@ -85,8 +144,8 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/.gitignore">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="283">
-                  <caret line="88" column="1" selection-start-line="88" selection-start-column="1" selection-end-line="88" selection-end-column="1" />
+                <state relative-caret-position="239">
+                  <caret line="86" column="1" selection-start-line="86" selection-start-column="1" selection-end-line="86" selection-end-column="1" />
                 </state>
               </provider>
             </entry>
@@ -467,8 +526,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/.gitignore">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="283">
-          <caret line="88" column="1" selection-start-line="88" selection-start-column="1" selection-end-line="88" selection-end-column="1" />
+        <state relative-caret-position="239">
+          <caret line="86" column="1" selection-start-line="86" selection-start-column="1" selection-end-line="86" selection-end-column="1" />
         </state>
       </provider>
     </entry>
