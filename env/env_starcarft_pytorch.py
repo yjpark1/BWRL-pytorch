@@ -36,6 +36,8 @@ class StarCraftEnvironment(object):
         # defalut health
         self.default_health_ally = 80 * len(self.env_details['ally'])
         self.default_health_enemy = 160 * len(self.env_details['enemy'])
+        self.nb_step = 0
+        self.R = 0
 
     def step(self, action):
         """Run one timestep of the environment's dynamics.
@@ -82,13 +84,14 @@ class StarCraftEnvironment(object):
         """
         gvar.release_action = True # ????
         initial_state = self._process_token()
+        self.R = 0
 
         return initial_state
 
     def _make_action_bwapi(self, action):
         action_bwapi = []
         # for each agent
-        for a_xy, a_type in zip(action[0], action[1]):
+        for a_xy, a_type in zip(action[0].squeeze(), action[1].squeeze()):
             a_x = int(a_xy[0] * 128)
             a_y = int(a_xy[1] * 128)
             # [x, y, nothing/attack/move]
@@ -133,8 +136,9 @@ class StarCraftEnvironment(object):
         return token_unit, token_resource
 
     def _calibrate_token_unit(self, token_unit):
+
         # no units
-        if token_unit == 0:
+        if len(token_unit.shape) == 1:
             token_unit = np.zeros(shape=(self.num_ally + self.num_enemy, 11))
             token_unit[:self.num_ally, 0] = 0  # assign ally
             token_unit[self.num_ally:, 0] = 1  # assign enemy
@@ -213,15 +217,14 @@ class StarCraftEnvironment(object):
 
     # _get_reward 함수와 _get_done 함수는 서로 얽혀 있음. 수정 시 주의요
     def _get_reward(self):
-        '''
+        """
         health = hp(1) + sheild(2)
-        '''
+        """
         # get health
         self._get_Health()
         currentHealth_ally = self.currentHealth_ally
         currentHealth_enemy = self.currentHealth_enemy
 
-        '''
         # reward by health change
         delta_ally = self.prev_health_ally - currentHealth_ally
         delta_enemy = self.prev_health_enemy - currentHealth_enemy
@@ -231,7 +234,6 @@ class StarCraftEnvironment(object):
         delta_enemy = 10 * delta_enemy / self.default_health_enemy
 
         reward = delta_enemy - delta_ally
-        '''
 
         # reward by steps
         reward = 0.5 #  ( 0 + 1 ) / 2 = 0.5
