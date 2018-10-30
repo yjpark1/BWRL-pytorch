@@ -3,6 +3,7 @@ import numpy as np
 import msgpack
 from main import GlobalVariable as gvar
 from util.CustomLog import cLogger
+import math
 
 logger = cLogger.getLogger()
 
@@ -38,6 +39,23 @@ class StarCraftEnvironment(object):
         self.default_health_enemy = 160 * len(self.env_details['enemy'])
         self.nb_step = 0
         self.R = 0
+
+        self.attack_range_of_vulture = 5
+
+        self.v_x = [0] * self.num_ally
+        self.v_y = [0] * self.num_ally
+
+        #self.z1_x, self.z1_y, self.z2_x, self.z2_y = 0,0,0,0
+        self.z_x = [0] * self.num_enemy
+        self.z_y = [0] * self.num_enemy
+
+        # Health(hp(1) + shield(2)) change ratio of vulture
+        # Health(hp(1) + shield(2)) change ratio of zealot
+        self.dead_count_of_vulture = 0
+        self.dead_count_of_zealot  = 0
+        self.attacking_1, self.attacking_2 = 0, 0 # attacking_status_of_vulture
+        self.under_attack_1, self.under_attack_2 = 0, 0  # status of vulture under attach
+
 
     def step(self, action):
         """Run one timestep of the environment's dynamics.
@@ -82,7 +100,7 @@ class StarCraftEnvironment(object):
         # Returns
             observation (object): The initial observation of the space. Initial reward is assumed to be 0.
         """
-        gvar.release_action = True # ????
+        gvar.release_action = True  # todo :  question mark?!
         initial_state = self._process_token()
         self.R = 0
 
@@ -181,6 +199,12 @@ class StarCraftEnvironment(object):
         token_unit_ally = token_unit[token_unit[:, 0] == 0]
         token_unit_enemy = token_unit[token_unit[:, 0] == 1]
 
+        get_len_ally_in_range = len(token_unit_enemy[-1,:]) - 9
+        self.n_vulture_in_range = token_unit_enemy[:, -get_len_ally_in_range:]
+        self.dead_count_of_vulture = sum(token_unit_ally[:,1] == 0)
+        self.dead_count_of_vulture = sum(token_unit_enemy[:, 1] == 0)
+        self.attack_range_of_vulture = 5
+
         token_unit_enemy = token_unit_enemy.flatten()
         observation = []
         for ally in token_unit_ally:
@@ -218,8 +242,17 @@ class StarCraftEnvironment(object):
     # _get_reward 함수와 _get_done 함수는 서로 얽혀 있음. 수정 시 주의요
     def _get_reward(self):
         """
-        health = hp(1) + sheild(2)
+        attack range of vulture : 5
+        vulture v1_x, v1_y, v2_x, v2_y
+        zealot z1_x, z1_y, z2_x, z2_y
+        Health(hp(1) + shield(2)) change ratio of vulture (delta_ally)
+        Health(hp(1) + shield(2)) change ratio of zealot (delta_enemy)
+        dead_count_of_vulture
+        dead_count_of_zealot
+        attacking status of vulture = attacking_1, attacking_2
+        status of vulture under attach = under_attack_1, under_attack_2
         """
+        reward = 0
         # get health
         self._get_Health()
         currentHealth_ally = self.currentHealth_ally
@@ -233,57 +266,47 @@ class StarCraftEnvironment(object):
         delta_ally = 10 * delta_ally / self.default_health_ally
         delta_enemy = 10 * delta_enemy / self.default_health_enemy
 
-        reward = delta_enemy - delta_ally
+        # self.v1_x, self.v1_y, self.v2_x, self.v2_y = token_unit_ally[0,4], token_unit_ally[0,5], token_unit_ally[1,4], token_unit_ally[1,5]
 
-        # reward by steps
-        reward = 0.5 #  ( 0 + 1 ) / 2 = 0.5
+        for i in self.num_ally:
+            self.v_x[i] = self.token_unit_ally[i, 4]
+            self.v_y[i] = self.token_unit_ally[i, 5]
 
-        '''
-        # reward by remain health
-        delta_ally = self.default_health_ally - currentHealth_ally
-        delta_enemy = self.default_health_enemy - currentHealth_enemy
+        # self.z1_x, self.z1_y, self.z2_x, self.z2_y, self.z3_x, self.z3_y = token_unit_enemy[0, 4], token_unit_enemy[0, 5], token_unit_enemy[1, 4], token_unit_enemy[1, 5],token_unit_enemy[2, 4], token_unit_enemy[2, 5]
 
-        test_delta_ally = self.prev_health_ally != currentHealth_ally
-        test_delta_enemy = self.prev_health_enemy != currentHealth_enemy
+        for j in self.num_ally:
+            self.z_x[j] = self.token_unit_enemy[j, 4]
+            self.z_y[j] = self.token_unit_enemy[j, 5]
 
-        reward = 0
-        if test_delta_ally or test_delta_enemy:
-            delta_ally = self.default_health_ally - currentHealth_ally
-            delta_enemy = self.default_health_enemy - currentHealth_enemy
+        n_count_in_range = 0
+        for i in self.num_ally:
+            for j in self.num_ally:
+                if math.sqrt(math.pow(self.z_x[j] - self.v_x[i], 2) + math.pow(self.z_y[j] - self.v_y[j],
+                                                                               2)) < self.n_vulture_in_range:
+                    n_count_in_range = n_count_in_range + 1
 
-            # scaling delta
-            delta_ally = 1 * delta_ally / self.default_health_ally
-            delta_enemy = 1 * delta_enemy / self.default_health_enemy
+        # Health(hp(1) + shield(2)) change ratio of vulture
+        # Health(hp(1) + shield(2)) change ratio of zealot
+        self.attacking_1, self.attacking_2 = self.token_unit_ally[0, 8], self.token_unit_ally[0, 8]  # attacking_status_of_vulture
+        self.under_attack_1, self.under_attack_2 = self.token_unit_ally[0, 10], self.token_unit_ally[1, 10]  # status of vulture under attach
 
-            reward = delta_enemy - delta_ally
-        '''
-        '''
-        if currentHealth_ally == 0 or currentHealth_enemy == 0:
-            # 다 끝난 경우
-            reward = 0
+        # 1. n count agent in range
+        reward = reward + n_count_in_range
 
-        elif (currentHealth_ally == self.default_health_ally and
-              currentHealth_enemy == self.default_health_enemy):
-            # 새로 시작한 경우
-            reward = 0
-        '''
+        # 2. change ratio hp
+        reward = reward + (-0.4 * delta_ally / self.default_health_ally - 0.6 * delta_enemy / self.default_health_enemy)
+
+        # 3. dead unit handling
+        reward = reward + (-0.4 * self.dead_count_of_vulture + 0.6 * self.dead_count_of_zealot)
+
+        # 4. isAttacking and underAttack handling
+        reward = reward + (self.attacking_1 + self.attacking_2) -(self.under_attack_1 + self.under_attack_2)
 
         ## for debug
         self.R += reward
 
-        '''
         self.hist.append(np.array([self.nb_step, self.prev_health_ally, currentHealth_ally,
                                    self.prev_health_enemy, currentHealth_enemy, reward, self.R]))
-
-        if self.R < -100:
-            hist = np.array(self.hist)
-            print(hist)
-            raise ArithmeticError
-        '''
-        ##
-        # print(self.token_unit)
-        # print('ally HP:', currentHealth_ally, ' enemy HP: ', currentHealth_enemy, ' reward: ', reward, ' cumulative reward: ', self.R)
-        ##
 
         return reward
 
@@ -318,40 +341,3 @@ class StarCraftEnvironment(object):
         self.prev_health_enemy = currentHealth_enemy
 
         return done
-
-    def render(self, mode='human', close=False):
-        """Renders the environment.
-        The set of supported modes varies per environment. (And some
-        environments do not support rendering at all.)
-
-        # Arguments
-            mode (str): The mode to render with.
-            close (bool): Close all open renderings.
-        """
-        pass
-
-    def close(self):
-        """Override in your subclass to perform any necessary cleanup.
-        Environments will automatically close() themselves when
-        garbage collected or when the program exits.
-        """
-        raise NotImplementedError()
-
-    def seed(self, seed=None):
-        """Sets the seed for this env's random number generator(s).
-
-        # Returns
-            Returns the list of seeds used in this env's random number generators
-        """
-        raise NotImplementedError()
-
-    def configure(self, *args, **kwargs):
-        """Provides runtime configuration to the environment.
-        This configuration should consist of data that tells your
-        environment how to run (such as an address of a remote server,
-        or path to your ImageNet data). It should not affect the
-        semantics of the environment.
-        """
-        raise NotImplementedError()
-
-
