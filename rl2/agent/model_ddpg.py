@@ -3,9 +3,9 @@ from __future__ import division
 import torch
 import numpy as np
 import shutil
-from rl import arglist
+from rl2 import arglist
 import copy
-from rl.utils import to_categorical
+from rl2.utils import to_categorical
 
 GAMMA = 0.95
 TAU = 0.001
@@ -28,7 +28,7 @@ class Trainer:
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), arglist.learning_rate)
 
         self.memory = memory
-        self.nb_actions = 5
+        self.nb_actions = 3  # todo : why 5?
 
         self.target_actor.eval()
         self.target_critic.eval()
@@ -63,8 +63,8 @@ class Trainer:
         return obs
 
     def process_action(self, actions):
-        actions = np.argmax(actions, axis=-1)
-        actions = actions.reshape(-1)
+        [action.squeeze() for action in actions]
+        # actions = actions.reshape(-1)
         return actions
 
     def process_reward(self, rewards):
@@ -91,11 +91,15 @@ class Trainer:
         """
         # state = np.expand_dims(state, axis=0)
         state = state.to(self.device)
-        action, _ = self.actor.forward(state)
-        action = action.detach()
+        actions, _ = self.actor.forward(state)
+
+        actions[0].detach()
+        actions[1].detach()
+
         # OU process: (-1, 1) scale
-        new_action = action.data.cpu().numpy()  # + (self.noise.sample() * self.action_lim)
-        return new_action
+        new_actions = [actions[0].data.cpu().numpy(),actions[1].data.cpu().numpy()]
+        # + (self.noise.sample() * self.action_lim)
+        return new_actions
 
     def process_batch(self, experiences):
         s0 = []
