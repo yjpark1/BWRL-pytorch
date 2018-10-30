@@ -12,7 +12,6 @@ def run():
 
     threading.Thread(name='RL training', target=rl_learn).start()
     logger.info(">>> RL env starts ... (1/2)")
-    l
     threading.Thread(name='Http Server', target=connect).start()
     logger.info(">>> HTTP service starts ... (2/2)")
     logger.info(">>> RL Server is now ready to accept connections on port " + str(gvar.PORT))
