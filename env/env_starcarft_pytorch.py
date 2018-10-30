@@ -141,8 +141,8 @@ class StarCraftEnvironment(object):
 
         # when units are dead
         # current units
-        numAlly = sum(self.token_unit[:, 0] == 0)
-        numEnemy = sum(self.token_unit[:, 0] == 1)
+        numAlly = sum(token_unit[:, 0] == 0)
+        numEnemy = sum(token_unit[:, 0] == 1)
 
         # dead units
         numDeadAlly = self.num_ally - numAlly
