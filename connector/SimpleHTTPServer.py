@@ -59,13 +59,15 @@ class MainHandler(tornado.web.RequestHandler):
         self.flag_restart = gvar.flag_restart
 
         while True:
-            time.sleep(1e-5)
+            time.sleep(1e-2)
             if gvar.release_action:
                 break
 
         gvar.release_action = False
         sendAction = self.set_action()
+        print('send1')
         self.write(sendAction)
+        print('send2')
 
     def on_message(self, message):
         # logger.debug("Client %s received a message : %s" % (self.id, message))
