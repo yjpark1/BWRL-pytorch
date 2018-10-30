@@ -55,7 +55,7 @@ class StarCraftEnvironment(object):
         self.dead_count_of_zealot  = 0
         self.attacking_1, self.attacking_2 = 0, 0 # attacking_status_of_vulture
         self.under_attack_1, self.under_attack_2 = 0, 0  # status of vulture under attach
-
+        self.token_unit = None
 
     def step(self, action):
         """Run one timestep of the environment's dynamics.
@@ -194,7 +194,7 @@ class StarCraftEnvironment(object):
         unitN = (2D np.arrray, 1D np.array)
         '''
         token_unit[:, 4:6] = token_unit[:, 4:6] / (64*8)  # ?? scale
-        token_unit = np.delete(token_unit, [6, 7], axis=1)
+        self.token_unit = np.delete(token_unit, [6, 7], axis=1)
 
         token_unit_ally = token_unit[token_unit[:, 0] == 0]
         token_unit_enemy = token_unit[token_unit[:, 0] == 1]
@@ -268,19 +268,19 @@ class StarCraftEnvironment(object):
 
         # self.v1_x, self.v1_y, self.v2_x, self.v2_y = token_unit_ally[0,4], token_unit_ally[0,5], token_unit_ally[1,4], token_unit_ally[1,5]
 
-        for i in self.num_ally:
+        for i in range(self.num_ally):
             self.v_x[i] = self.token_unit_ally[i, 4]
             self.v_y[i] = self.token_unit_ally[i, 5]
 
         # self.z1_x, self.z1_y, self.z2_x, self.z2_y, self.z3_x, self.z3_y = token_unit_enemy[0, 4], token_unit_enemy[0, 5], token_unit_enemy[1, 4], token_unit_enemy[1, 5],token_unit_enemy[2, 4], token_unit_enemy[2, 5]
 
-        for j in self.num_ally:
+        for j in range(self.num_ally):
             self.z_x[j] = self.token_unit_enemy[j, 4]
             self.z_y[j] = self.token_unit_enemy[j, 5]
 
         n_count_in_range = 0
-        for i in self.num_ally:
-            for j in self.num_ally:
+        for i in range(self.num_ally):
+            for j in range(self.num_ally):
                 if math.sqrt(math.pow(self.z_x[j] - self.v_x[i], 2) + math.pow(self.z_y[j] - self.v_y[j],
                                                                                2)) < self.n_vulture_in_range:
                     n_count_in_range = n_count_in_range + 1
