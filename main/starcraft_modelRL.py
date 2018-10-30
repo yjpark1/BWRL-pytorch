@@ -1,12 +1,12 @@
 from env.env_starcarft_pytorch import StarCraftEnvironment
-from rl2.networks.ac_network_model import ActorNetwork, CriticNetwork
-from rl2.agent.model_ddpg import Trainer
+from rl.networks.ac_network_model import ActorNetwork, CriticNetwork
+from rl.agent.model_ddpg import Trainer
 from main import GlobalVariable as gvar
 import numpy as np
 import torch
 import time
-from rl2.replay_buffer import SequentialMemory
-from rl2 import arglist
+from rl.replay_buffer import SequentialMemory
+from rl import arglist
 from copy import deepcopy
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
@@ -99,6 +99,7 @@ def rl_learn(cnt=0):
         terminal_verbose = terminal
         if terminal:
             terminal_reward.append(np.mean(rewards))
+
 
             # save terminal state
             # process observation

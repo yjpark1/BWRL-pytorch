@@ -3,9 +3,9 @@ from __future__ import division
 import torch
 import numpy as np
 import shutil
-from rl2 import arglist
+from rl import arglist
 import copy
-from rl2.utils import to_categorical
+from rl.utils import to_categorical
 
 GAMMA = 0.95
 TAU = 0.001
