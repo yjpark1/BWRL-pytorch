@@ -62,8 +62,7 @@ class StarCraftEnvironment(object):
         gvar.action = action_token
 
         # a -> s, r, d
-        token_refine = self._refine_token()
-        next_state = self._get_state(token_refine)
+        next_state = self._process_token()
         reward = self._get_reward()
         done = self._get_done()
         info = dict()
@@ -82,8 +81,7 @@ class StarCraftEnvironment(object):
             observation (object): The initial observation of the space. Initial reward is assumed to be 0.
         """
         gvar.release_action = True # ????
-        token = self._get_token()
-        initial_state = self._get_state(token)
+        initial_state = self._process_token()
 
         return initial_state
 
@@ -114,27 +112,23 @@ class StarCraftEnvironment(object):
             if len(gvar.token_deque) == 0:
                 continue
 
+            gvar.release_action = True
             token = gvar.token_deque.pop()
             token = msgpack.unpackb(token, raw=False)
             if len(token) == 1:
                 # there are no units! Send dummy action
-                gvar.release_action = True
                 action_token = self._make_action_token(self.dummy_action)
                 gvar.action = action_token
-                print('b')
-
-            elif len(token) == 2:
-                print('a')
+            else:
                 break
-
         return token
 
     def _parse_token(self, token):
         if len(token) == 1:
             token_unit = 0
             token_resource = token[-1]
-        elif len(token) == 2:
-            token_unit = token[2:-1]
+        else:
+            token_unit = token[:-1]
             token_resource = token[-1]
         return token_unit, token_resource
 
@@ -144,15 +138,14 @@ class StarCraftEnvironment(object):
         token_resource = np.array(token_resource, dtype='float32')
         return token_unit, token_resource
 
-    def _calibrate_token_unit(self):
+    def _calibrate_token_unit(self, token_unit):
         # no units
-        if self.token_unit == 0:
-            self.token_unit = np.zeros(shape=(self.num_ally + self.num_enemy, 11))
-            self.token_unit[:self.num_ally, 0] = 0  # assign ally
-            self.token_unit[self.num_ally:, 0] = 1  # assign enemy
-        # when units are dead
-        # elif
+        if token_unit == 0:
+            token_unit = np.zeros(shape=(self.num_ally + self.num_enemy, 11))
+            token_unit[:self.num_ally, 0] = 0  # assign ally
+            token_unit[self.num_ally:, 0] = 1  # assign enemy
 
+        # when units are dead
         # current units
         numAlly = sum(self.token_unit[:, 0] == 0)
         numEnemy = sum(self.token_unit[:, 0] == 1)
@@ -163,15 +156,17 @@ class StarCraftEnvironment(object):
 
         # calibration
         if numDeadAlly > 0:
-            add = np.zeros((numDeadAlly, 7))
-            self.token_unit = np.vstack([self.token_unit, add])
+            add = np.zeros((numDeadAlly, 11))
+            token_unit = np.vstack([token_unit, add])
 
         if numDeadEnemy > 0:
-            add = np.zeros((numDeadEnemy, 7))
+            add = np.zeros((numDeadEnemy, 11))
             add[:, 0] = 1
-            self.token_unit = np.vstack([self.token_unit, add])
+            token_unit = np.vstack([token_unit, add])
 
-    def _2DArrayfromUnitToken(self, token_unit, state_minimap):
+        return token_unit
+
+    def _make_observation(self, token_unit):
         '''
         <input info>
         BWAPI: for a unit, vector = [isEnemy, HP, Sheild, Cooldown, X, Y, UnitType, ID, isAttacking, isMoving, isUnderAttack]
@@ -179,54 +174,40 @@ class StarCraftEnvironment(object):
         unitN = np.array([isEnemy, HP, Sheild, Cooldown, X, Y, UnitType, ID, isAttacking, isMoving, isUnderAttack])
 
         <output info>
-        *For now, we use only cooldown because we play homogeneous minigame*
         out = np.array([unit1, unit2, ..., unitN])
         unitN = (2D np.arrray, 1D np.array)
-
-        * 2D np.arrray: X, Y coordinate
-            # 1st channel: ally HP
-            # 2nd channel: enemy HP
-            # 3rd channel: enemy Sheild
-
-        * 1D np.array: cooldown
         '''
-        # use isEnemy
+        token_unit[:, 4:6] = token_unit[:, 4:6] / (64*8)  # ?? scale
+        token_unit = np.delete(token_unit, [6, 7], axis=1)
 
-        # TODO : does it guarantee that bwapi send agents information with same order every time?!!
+        token_unit_ally = token_unit[token_unit[:, 0] == 0]
+        token_unit_enemy = token_unit[token_unit[:, 0] == 1]
 
-        return states_unit_2D, states_unit_1D
+        token_unit_enemy = token_unit_enemy.flatten()
+        observation = []
+        for ally in token_unit_ally:
+            observation.append(np.concatenate([ally, token_unit_enemy]))
+        observation = np.array(observation)
 
+        return observation
 
-    def _refine_token(self):
-        token = self._deserialization()
-        token_minimap, token_unit, token_resource = self._parse_token(token)
-
-        tokens = self._str2num(token_minimap, token_unit, token_resource)
-        state_minimap, token_resource = tokens[0], tokens[2]
-
-        # to use for reward
-        self.token_unit = tokens[1]
+    def _process_token(self):
+        token = self._get_token()
+        token_unit, token_resources = self._parse_token(token)
+        token_unit, token_resources = self._str2num(token_unit, token_resources)
 
         # unit state
         # check dead ally to calibrate state
-        self._calibrate_token_unit()
-        state_unit_2D, state_unit_1D = self._2DArrayfromUnitToken(self.token_unit, state_minimap)
+        token_unit = self._calibrate_token_unit(token_unit)
+        obs = self._make_observation(token_unit)
 
+        # to use for reward
         # resource: mineral, gas
-        self.mineral = token_resource[0]  # win count
-        self.gas = token_resource[1]  # game count
+        self.token_unit = token_unit
+        self.mineral = token_resources[0]  # win count
+        self.gas = token_resources[1]  # game count
 
-        return state_unit_2D, state_unit_1D
-
-
-    def _get_state(self, token_refine):
-        state_unit_2D = token_refine[0]
-        state_unit_1D = token_refine[1]
-
-        # make state: combine (minimap + state unit 2D) + 1D
-        state = [state_unit_2D, state_unit_1D]
-
-        return state
+        return obs
 
     def _get_Health(self):
         # isEnemy

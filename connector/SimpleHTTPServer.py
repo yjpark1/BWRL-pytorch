@@ -53,6 +53,7 @@ class MainHandler(tornado.web.RequestHandler):
     outstr = None
 
     def post(self):
+        print(self.request.body)
         gvar.token_deque.append(self.request.body)
         gvar.service_flag = 1
         gvar.flag_restart = self.request.headers.get('isRestarted')
@@ -65,9 +66,7 @@ class MainHandler(tornado.web.RequestHandler):
 
         gvar.release_action = False
         sendAction = self.set_action()
-        print('send1')
         self.write(sendAction)
-        print('send2')
 
     def on_message(self, message):
         # logger.debug("Client %s received a message : %s" % (self.id, message))
