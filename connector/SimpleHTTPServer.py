@@ -53,7 +53,6 @@ class MainHandler(tornado.web.RequestHandler):
     outstr = None
 
     def post(self):
-        print(self.request.body)
         gvar.token_deque.append(self.request.body)
         gvar.service_flag = 1
         gvar.flag_restart = self.request.headers.get('isRestarted')

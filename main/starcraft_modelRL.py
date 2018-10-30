@@ -7,9 +7,11 @@ import torch
 import time
 from rl.replay_buffer import SequentialMemory
 from rl import arglist
+from rl.utils import OUNoise
 from copy import deepcopy
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
+ou_xy = OUNoise(action_dimension=2, theta=0.15, sigma=0.2)
 
 def rl_learn(cnt=0):
     torch.cuda.empty_cache()
@@ -24,7 +26,7 @@ def rl_learn(cnt=0):
     actor = ActorNetwork(nb_agents=env.nb_agents, input_dim=36, out_dim=[2, 3])
     critic = CriticNetwork(nb_agents=env.nb_agents, input_dim=36 + 5, out_dim=1)
     memory = SequentialMemory(limit=1000000)
-    agent = Trainer(actor, critic, memory)
+    agent = Trainer(actor, critic, memory, noise=ou_xy)
 
     # initialize history
     episode_rewards = [0.0]  # sum of rewards for all agents
@@ -58,7 +60,6 @@ def rl_learn(cnt=0):
         # get action
         obs = agent.process_obs(obs)
         actions = agent.get_exploration_action(obs)
-        actions = agent.process_action(actions)
 
         # environment step
         while True:
@@ -68,6 +69,7 @@ def rl_learn(cnt=0):
                 new_obs, rewards, done, info = env.step(actions)
                 break
 
+        actions = agent.process_action(actions)
         rewards = agent.process_reward(rewards)
         rewards = rewards.mean()
         episode_step += 1
@@ -76,9 +78,11 @@ def rl_learn(cnt=0):
         terminal = agent.process_done(done or terminal)
         # collect experience
         # obs, actions, rewards, done
-        #actions = agent.to_onehot(actions)
         agent.memory.append(obs, actions, rewards, terminal, training=True)
-
+        # torch.Size([1, 2, 36])
+        # torch.Size([1, 2, 5])
+        # torch.Size([])
+        # torch.Size([])
         # next observation
         obs = deepcopy(new_obs)
 
@@ -99,15 +103,12 @@ def rl_learn(cnt=0):
         terminal_verbose = terminal
         if terminal:
             terminal_reward.append(np.mean(rewards))
-
-
             # save terminal state
             # process observation
             obs = agent.process_obs(obs)
             # get action & process action
             actions = agent.get_exploration_action(obs)
             actions = agent.process_action(actions)
-            #actions = agent.to_onehot(actions)
             # process rewards
             rewards = agent.process_reward(0.)
             rewards = rewards.mean().item()

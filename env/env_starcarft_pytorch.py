@@ -60,7 +60,7 @@ class StarCraftEnvironment(object):
         # set action
         action_bwapi = self._make_action_bwapi(action)
         action_token = self._make_action_token(action_bwapi)
-        gvar.release_action = False
+        gvar.release_action = True
         gvar.action = action_token
 
         # a -> s, r, d

@@ -98,7 +98,7 @@ class ActorNetwork(nn.Module):
         hid, _ = self.bilstm(hid, None)
         hid = F.relu(hid)
         policy_cont = self.dense2_cont(hid)
-        policy_cont = F.tanh(policy_cont)
+        policy_cont = torch.tanh(policy_cont)
         policy_disc = self.dense2_disc(hid)
         policy_disc = nn.Softmax(dim=-1)(policy_disc)
         next_state = self.dense3(hid)

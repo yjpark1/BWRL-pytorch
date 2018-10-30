@@ -12,7 +12,7 @@ TAU = 0.001
 
 
 class Trainer:
-    def __init__(self, actor, critic, memory):
+    def __init__(self, actor, critic, memory, noise):
         """
         DDPG for categorical action
         """
@@ -30,6 +30,8 @@ class Trainer:
 
         self.target_actor.eval()
         self.target_critic.eval()
+
+        self.noise = noise
 
     def soft_update(self, target, source, tau):
         """
@@ -61,8 +63,8 @@ class Trainer:
         return obs
 
     def process_action(self, actions):
-        [action.squeeze() for action in actions]
-        # actions = actions.reshape(-1)
+        actions = np.concatenate(actions, axis=-1)
+        actions = torch.from_numpy(actions)
         return actions
 
     def process_reward(self, rewards):
@@ -75,11 +77,11 @@ class Trainer:
         done = torch.from_numpy(done)
         return done
 
-    def to_onehot(self, a1):
-        a1 = to_categorical(a1, num_classes=self.nb_actions)
-        a1 = a1.astype('float32')
-        a1 = torch.from_numpy(a1)
-        return a1
+    def to_onehot(self, actions):
+        actions = np.argmax(actions, axis=-1)
+        actions = to_categorical(actions, num_classes=3)
+        actions = actions.astype('float32')
+        return actions
 
     def get_exploration_action(self, state):
         """
@@ -90,14 +92,11 @@ class Trainer:
         # state = np.expand_dims(state, axis=0)
         state = state.to(self.device)
         actions, _ = self.actor.forward(state)
-
-        actions[0].detach()
-        actions[1].detach()
-
+        actions = [x.data.cpu().numpy() for x in actions]
         # OU process: (-1, 1) scale
-        new_actions = [actions[0].data.cpu().numpy(),actions[1].data.cpu().numpy()]
-        # + (self.noise.sample() * self.action_lim)
-        return new_actions
+        actions[0] = actions[0] + self.noise.noise()
+        actions[1] = self.to_onehot(actions[1])
+        return actions
 
     def process_batch(self, experiences):
         s0 = []
