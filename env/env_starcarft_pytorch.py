@@ -89,16 +89,10 @@ class StarCraftEnvironment(object):
         action_bwapi = []
         # for each agent
         for a_xy, a_type in zip(action[0], action[1]):
-            a_xy = np.where(np.arange(64 * 64).reshape(64, 64) == a_xy)
-
-            # use reference coordinate
-            a_xy = self.reference_coor[a_xy[0], a_xy[1], :]
-            a_xy = np.squeeze(a_xy)
-
-            a_x = int(a_xy[0] * 4)
-            a_y = int(a_xy[1] * 4)
+            a_x = int(a_xy[0] * 128)
+            a_y = int(a_xy[1] * 128)
             # [x, y, nothing/attack/move]
-            a_type = int(a_type)
+            a_type = int(np.argmax(a_type))
             a = [a_x, a_y, a_type]
             action_bwapi.append(a)
         return action_bwapi

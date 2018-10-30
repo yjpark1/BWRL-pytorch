@@ -17,12 +17,12 @@ def rl_learn(cnt=0):
     scenario_name = 'TV2vsPZ3'
     env_details = {'ally': ['verture']*2,
                    'enemy': ['zealot']*3,
-                   'state_dim': (64, 64, 3 + 2)}
+                   'state_dim': (2, 36)}
 
     env = StarCraftEnvironment(agent_name=scenario_name, env_details=env_details)
 
-    actor = ActorNetwork(nb_agents=env.nb_agents, input_dim=10, out_dim=[2, 3])
-    critic = CriticNetwork(nb_agents=env.nb_agents, input_dim=10 + 5, out_dim=1)
+    actor = ActorNetwork(nb_agents=env.nb_agents, input_dim=36, out_dim=[2, 3])
+    critic = CriticNetwork(nb_agents=env.nb_agents, input_dim=36 + 5, out_dim=1)
     memory = SequentialMemory(limit=1000000)
     agent = Trainer(actor, critic, memory)
 
@@ -37,7 +37,6 @@ def rl_learn(cnt=0):
     while True:
         if gvar.service_flag == 0:
             time.sleep(1e-2)
-
         else:
             obs = env.reset()
             break
