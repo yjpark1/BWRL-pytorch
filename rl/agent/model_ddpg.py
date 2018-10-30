@@ -28,12 +28,6 @@ class Trainer:
         self.target_critic = copy.deepcopy(critic).to(self.device)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), arglist.learning_rate)
 
-<<<<<<< HEAD
-=======
-        self.memory = memory
-        self.nb_actions = 3  # todo : why 5?
-
->>>>>>> b35bd32d94174beaf8cb6a362cc0451a52c0dca7
         self.target_actor.eval()
         self.target_critic.eval()
 
@@ -101,16 +95,9 @@ class Trainer:
         actions[1].detach()
 
         # OU process: (-1, 1) scale
-<<<<<<< HEAD
-
-
-        new_action = action.data.cpu().numpy()  # + (self.noise.sample() * self.action_lim)
-        return new_action
-=======
         new_actions = [actions[0].data.cpu().numpy(),actions[1].data.cpu().numpy()]
         # + (self.noise.sample() * self.action_lim)
         return new_actions
->>>>>>> b35bd32d94174beaf8cb6a362cc0451a52c0dca7
 
     def process_batch(self, experiences):
         s0 = []
