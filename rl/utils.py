@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.random as nr
 import torch
 from torch.autograd import Variable
 import torch.nn.functional as F
@@ -83,6 +84,21 @@ def gumbel_softmax(logits, temperature=1.0, hard=False):
     return y
 
 
-class OU(object):
-    def function(self, x, mu, theta, sigma):
-        return theta * (mu - x) + sigma * np.random.randn(1)
+class OUNoise:
+    """docstring for OUNoise"""
+    def __init__(self, action_dimension, mu=0, theta=0.15, sigma=0.2):
+        self.action_dimension = action_dimension
+        self.mu = mu
+        self.theta = theta
+        self.sigma = sigma
+        self.state = np.ones(self.action_dimension) * self.mu
+        self.reset()
+
+    def reset(self):
+        self.state = np.ones(self.action_dimension) * self.mu
+
+    def noise(self):
+        x = self.state
+        dx = self.theta * (self.mu - x) + self.sigma * nr.randn(len(x))
+        self.state = x + dx
+        return self.state

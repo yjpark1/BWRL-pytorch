@@ -17,6 +17,7 @@ class Trainer:
         DDPG for categorical action
         """
         self.device = torch.device('cuda:0')
+        self.memory = memory
 
         self.iter = 0
         self.actor = actor.to(self.device)
@@ -26,9 +27,6 @@ class Trainer:
         self.critic = critic.to(self.device)
         self.target_critic = copy.deepcopy(critic).to(self.device)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), arglist.learning_rate)
-
-        self.memory = memory
-        self.nb_actions = 5
 
         self.target_actor.eval()
         self.target_critic.eval()
@@ -94,6 +92,8 @@ class Trainer:
         action, _ = self.actor.forward(state)
         action = action.detach()
         # OU process: (-1, 1) scale
+
+
         new_action = action.data.cpu().numpy()  # + (self.noise.sample() * self.action_lim)
         return new_action
 
