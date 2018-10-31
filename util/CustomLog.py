@@ -14,8 +14,8 @@ class cLogger():
             streamHandler = logging.StreamHandler()
             fileHandler.setFormatter(fomatter)
             streamHandler.setFormatter(fomatter)
-            LOGGER.addHandler(fileHandler)
-            # LOGGER.addHandler(streamHandler)
+            # LOGGER.addHandler(fileHandler)
+            LOGGER.addHandler(streamHandler)
             LOGGER.setLevel(logging.DEBUG)
             logging.basicConfig(filename='./test.log', level=logging.DEBUG)
         else:

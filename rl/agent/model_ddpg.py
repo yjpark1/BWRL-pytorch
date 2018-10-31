@@ -63,7 +63,6 @@ class Trainer:
         return obs
 
     def process_action(self, actions):
-        actions = np.concatenate(actions, axis=-1)
         actions = torch.from_numpy(actions)
         return actions
 
@@ -92,10 +91,10 @@ class Trainer:
         # state = np.expand_dims(state, axis=0)
         state = state.to(self.device)
         actions, _ = self.actor.forward(state)
-        actions = [x.data.cpu().numpy() for x in actions]
+        actions = actions.data.cpu().numpy()
         # OU process: (-1, 1) scale
-        actions[0] = actions[0] + self.noise.noise()
-        actions[1] = self.to_onehot(actions[1])
+        actions[:, :, 0:2] = actions[:, :, 0:2] + self.noise.noise()
+        actions[:, :, 2:] = self.to_onehot(actions[:, :, 2:])
         return actions
 
     def process_batch(self, experiences):

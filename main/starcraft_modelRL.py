@@ -13,6 +13,7 @@ torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 ou_xy = OUNoise(action_dimension=2, theta=0.15, sigma=0.2)
 
+
 def rl_learn(cnt=0):
     torch.cuda.empty_cache()
     # load scenario from script
@@ -25,7 +26,7 @@ def rl_learn(cnt=0):
 
     actor = ActorNetwork(nb_agents=env.nb_agents, input_dim=36, out_dim=[2, 3])
     critic = CriticNetwork(nb_agents=env.nb_agents, input_dim=36 + 5, out_dim=1)
-    memory = SequentialMemory(limit=1000000)
+    memory = SequentialMemory(limit=10000)
     agent = Trainer(actor, critic, memory, noise=ou_xy)
 
     # initialize history
@@ -51,9 +52,9 @@ def rl_learn(cnt=0):
     verbose_episode = True
     t_start = time.time()
 
-    log = open('results/train_log.txt', 'w')
-    log.write('train start... \n')
-    log.close()
+    # log = open('results/train_log.txt', 'w')
+    # log.write('train start... \n')
+    # log.close()
 
     print('Starting iterations...')
     while True:
@@ -73,7 +74,7 @@ def rl_learn(cnt=0):
         rewards = agent.process_reward(rewards)
         rewards = rewards.mean()
         episode_step += 1
-        # done = all(done)
+
         terminal = (episode_step >= arglist.max_episode_len)
         terminal = agent.process_done(done or terminal)
         # collect experience
@@ -92,16 +93,9 @@ def rl_learn(cnt=0):
             episode_rewards[-1] += rew
             agent_rewards[i][-1] += rew
 
-        # for displaying learned policies
-        if arglist.display:
-            if terminal:
-                time.sleep(0.1)
-                env.render()
-            # continue
-
         # for save & print history
-        terminal_verbose = terminal
-        if terminal:
+        terminal_verbose = terminal or done
+        if terminal or done:
             terminal_reward.append(np.mean(rewards))
             # save terminal state
             # process observation
@@ -113,14 +107,16 @@ def rl_learn(cnt=0):
             rewards = agent.process_reward(0.)
             rewards = rewards.mean().item()
             # process terminal
-            terminal = agent.process_done(False)
-            agent.memory.append(obs, actions, rewards, terminal, training=True)
+            agent.memory.append(obs, actions, rewards, agent.process_done(False), training=True)
 
             # reset environment
             while True:
                 if gvar.service_flag == 0:
                     time.sleep(1e-2)
                 else:
+                    action_token = env._make_action_token(env.dummy_action)
+                    gvar.release_action = True
+                    gvar.action = action_token
                     obs = env.reset()
                     break
 

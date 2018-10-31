@@ -101,8 +101,9 @@ class ActorNetwork(nn.Module):
         policy_cont = torch.tanh(policy_cont)
         policy_disc = self.dense2_disc(hid)
         policy_disc = nn.Softmax(dim=-1)(policy_disc)
+        policy = torch.cat([policy_cont, policy_disc], dim=-1)
         next_state = self.dense3(hid)
-        return [policy_cont, policy_disc], next_state
+        return policy, next_state
 
 
 class CriticNetwork(nn.Module):
