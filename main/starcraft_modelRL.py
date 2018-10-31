@@ -114,7 +114,10 @@ def rl_learn(cnt=0):
                     gvar.release_action = True
                     gvar.action = action_token
                     obs = env.reset()
-                    break
+                    if sum(env.token_unit[:, 1] > 0) == len(env_details['enemy']) + len(env_details['ally']):
+                        break
+                    else:
+                        print('skip meaningless obs')
 
             episode_step = 0
             nb_episode += 1

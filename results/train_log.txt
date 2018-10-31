@@ -1,1 +1,16 @@
 train start... 
+steps: 10315, episodes: 100, mean episode reward: 510.867, reward: -0.457, time: 362.618, TD error: 2.471, c_model: 1.281, actorQ: -126.421, a_model: 15.379
+steps: 15983, episodes: 200, mean episode reward: 291.607, reward: -0.46, time: 202.763, TD error: 2.04, c_model: 1.099, actorQ: -177.266, a_model: 15.172
+steps: 28469, episodes: 300, mean episode reward: 692.11, reward: -0.422, time: 427.067, TD error: 1.199, c_model: 0.655, actorQ: -261.526, a_model: 14.948
+steps: 42320, episodes: 400, mean episode reward: 772.276, reward: -0.422, time: 473.166, TD error: 0.819, c_model: 0.45, actorQ: -309.106, a_model: 14.867
+steps: 55278, episodes: 500, mean episode reward: 722.746, reward: -0.422, time: 444.652, TD error: 0.639, c_model: 0.352, actorQ: -336.113, a_model: 14.717
+steps: 68637, episodes: 600, mean episode reward: 738.93, reward: -0.422, time: 457.624, TD error: 0.524, c_model: 0.289, actorQ: -355.271, a_model: 14.537
+steps: 83445, episodes: 700, mean episode reward: 821.31, reward: -0.422, time: 505.875, TD error: 0.44, c_model: 0.244, actorQ: -372.149, a_model: 14.299
+steps: 97420, episodes: 800, mean episode reward: 768.288, reward: -0.422, time: 466.364, TD error: 0.386, c_model: 0.214, actorQ: -385.171, a_model: 14.043
+steps: 110747, episodes: 900, mean episode reward: 744.618, reward: -0.422, time: 446.984, TD error: 0.346, c_model: 0.192, actorQ: -397.706, a_model: 13.792
+steps: 123970, episodes: 1000, mean episode reward: 724.248, reward: -0.498, time: 443.361, TD error: 0.316, c_model: 0.175, actorQ: -409.91, a_model: 13.526
+steps: 137033, episodes: 1100, mean episode reward: 726.842, reward: -0.422, time: 440.402, TD error: 0.291, c_model: 0.161, actorQ: -423.82, a_model: 13.249
+steps: 149385, episodes: 1200, mean episode reward: 686.076, reward: -0.422, time: 420.755, TD error: 0.273, c_model: 0.151, actorQ: -437.862, a_model: 12.987
+steps: 162465, episodes: 1300, mean episode reward: 729.21, reward: -0.422, time: 444.924, TD error: 0.256, c_model: 0.141, actorQ: -453.167, a_model: 12.698
+steps: 175322, episodes: 1400, mean episode reward: 713.584, reward: -0.422, time: 441.796, TD error: 0.242, c_model: 0.133, actorQ: -468.143, a_model: 12.418
+steps: 189044, episodes: 1500, mean episode reward: 759.826, reward: -0.422, time: 472.582, TD error: 0.229, c_model: 0.126, actorQ: -483.707, a_model: 12.114

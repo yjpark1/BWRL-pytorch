@@ -101,7 +101,7 @@ class Trainer:
 
     def process_batch(self, experiences):
         s0 = torch.cat([e.state0[0] for e in experiences], dim=0)
-        a0 = torch.stack([e.action for e in experiences], dim=0)
+        a0 = torch.cat([e.action for e in experiences], dim=0)
         r = torch.stack([e.reward for e in experiences], dim=0)
         s1 = torch.cat([e.state1[0] for e in experiences], dim=0)
         d = torch.stack([e.terminal1 for e in experiences], dim=0)
@@ -153,7 +153,7 @@ class Trainer:
         pred_a0, pred_s1 = self.actor.forward(s0)
 
         # Loss: entropy for exploration
-        entropy = torch.sum(pred_a0 * torch.log(pred_a0), dim=-1).mean()
+        entropy = torch.sum(pred_a0[:, :, 2:] * torch.log(pred_a0[:, :, 2:]), dim=-1).mean()
         # Loss: regularization
         l2_reg = torch.cuda.FloatTensor(1)
         for W in self.actor.parameters():
