@@ -62,6 +62,8 @@ def rl_learn(cnt=0):
         obs = agent.process_obs(obs)
         actions = agent.get_exploration_action(obs)
 
+        truley_done = False
+
         # environment step
         while True:
             if gvar.service_flag == 0:
@@ -96,6 +98,7 @@ def rl_learn(cnt=0):
         # for save & print history
         terminal_verbose = terminal or done
         if terminal or done:
+            print('done!!')
             terminal_reward.append(np.mean(rewards))
             # save terminal state
             # process observation
@@ -106,19 +109,23 @@ def rl_learn(cnt=0):
             # process rewards
             rewards = agent.process_reward(0.)
             rewards = rewards.mean().item()
-            # process terminal
-            agent.memory.append(obs, actions, rewards, agent.process_done(False), training=True)
 
-            # reset environment
+            # process terminal
+            agent.memory.append(obs, actions, rewards, agent.process_done(True), training=True)
+
+            # reset environment and skip meaningless observation which is need to skip!!!
             while True:
                 if gvar.service_flag == 0:
-                    time.sleep(1e-2)
+                    time.sleep(1e-5)
                 else:
                     action_token = env._make_action_token(env.dummy_action)
                     gvar.release_action = True
-                    gvar.action = action_token
+                    gvar.action =  action_token
                     obs = env.reset()
-                    break
+                    if sum(env.token_unit[:,1] > 0) == len(env_details['enemy']) + len(env_details['ally']):
+                        break
+                    else:
+                        print('skip meaningless obs')
 
             episode_step = 0
             nb_episode += 1
@@ -129,7 +136,7 @@ def rl_learn(cnt=0):
 
         # update all trainers, if not in display or benchmark mode
         loss = [np.nan, np.nan]
-        if (train_step > arglist.warmup_steps) and (train_step % 600 == 0):
+        if (train_step > arglist.warmup_steps) and (train_step % 100000 == 0):
             # optimize actor-critic
             loss = agent.optimize()
             loss = np.array([x.data.item() for x in loss])

@@ -7,18 +7,9 @@ import math
 
 logger = cLogger.getLogger()
 
-# env_details = {'ally': ['verture']*2,
-#                'enemy': ['zealot']*3, 
-#                'state_dim': (64, 64, 3 + 2)}
-
-
 class StarCraftEnvironment(object):
-    """Add class docstring."""
-    reward_range = (-np.inf, np.inf)
-    observation_space = None
 
     def __init__(self, agent_name, env_details):
-        # intialize
         self.prev_health_ally = 0
         self.prev_health_enemy = 0
 
@@ -86,7 +77,7 @@ class StarCraftEnvironment(object):
         reward = self._get_reward()
         done = self._get_done()
         info = dict()
-        logger.info('step: {}'.format(self.nb_step))
+        # logger.info('step: {}'.format(self.nb_step))
 
         return next_state, reward, done, info
 
@@ -95,7 +86,7 @@ class StarCraftEnvironment(object):
         Resets the state of the environment and returns an initial observation.
 
         [get_initial_state in StarCraftEnvironment]
-        # Returns
+        # Retur
             observation (object): The initial observation of the space. Initial reward is assumed to be 0.
         """
         self.nb_step = 0
@@ -127,6 +118,8 @@ class StarCraftEnvironment(object):
     def _get_token(self):
         while True:
             if len(gvar.token_deque) == 0:
+                import time
+                time.sleep(1e-5)
                 continue
 
             token = gvar.token_deque.pop()
@@ -137,7 +130,7 @@ class StarCraftEnvironment(object):
                 gvar.release_action = True
                 gvar.action = action_token
             else:
-                logger.info('state\n' + str(token))
+                #logger.info('state\n' + str(token))
                 break
         return token
 
@@ -159,6 +152,7 @@ class StarCraftEnvironment(object):
     def _calibrate_token_unit(self, token_unit):
         # no units
         if len(token_unit.shape) == 1:
+            print('here!')
             token_unit = np.zeros(shape=(self.num_ally + self.num_enemy, 11))
             token_unit[:self.num_ally, 0] = 0  # assign ally
             token_unit[self.num_ally:, 0] = 1  # assign enemy
@@ -226,14 +220,6 @@ class StarCraftEnvironment(object):
         self.gas = token_resources[1]  # game count
 
         return obs
-
-    def _get_Health(self):
-        # isEnemy
-        ally = self.token_unit[self.token_unit[:, 0] == 0]
-        enemy = self.token_unit[self.token_unit[:, 0] == 1]
-
-        self.currentHealth_ally = sum(ally[:, 1])
-        self.currentHealth_enemy = sum(enemy[:, 1]) + sum(enemy[:, 2])
 
     # _get_reward 함수와 _get_done 함수는 서로 얽혀 있음. 수정 시 주의요
     def _get_reward(self):
@@ -313,33 +299,35 @@ class StarCraftEnvironment(object):
         return reward
 
     def _get_done(self):
+        """
+        for battle scenario
+        done check
+            - sum of one or two sides' units HP = 0
+            - flag_restart is True
+        :return: done
+        """
         done = False
-        # currentHealth_ally = self.currentHealth_ally
-        # currentHealth_enemy = self.currentHealth_enemy
-        #
-        # '''
-        # test1 = self.currentHealth_ally - self.prev_health_ally == self.default_health_ally
-        # test2 = self.currentHealth_enemy - self.prev_health_enemy == self.default_health_enemy
-        # '''
+
+        ally = self.token_unit[self.token_unit[:, 0] == 0]
+        enemy = self.token_unit[self.token_unit[:, 0] == 1]
+
+        # self.currentHealth_ally = sum(ally[:, 1])
+        # self.currentHealth_enemy = sum(enemy[:, 1]) + sum(enemy[:, 2])
+
         # test1 = (self.currentHealth_ally - self.prev_health_ally) >= (self.default_health_ally - 8)
-        # test2 = (self.currentHealth_enemy - self.prev_health_enemy) >= (self.default_health_enemy - 8)
-        #
-        # if (test1 or test2) and self.nb_step > 10:
-        #     done = True
-        #
-        # '''
-        # print("self.flag_restart: ", self.flag_restart, " self.prev_flat_restart: ", self.prev_flag_restart)
-        #
-        # if (not self.prev_flag_restart) and (self.flag_restart == 1):
-        #     done = True
-        #
-        # elif (test1 or test2) and self.nb_step > 10:
-        #     done = True
-        #
-        # self.prev_flag_restart = self.flag_restart
-        # '''
-        # # update prev_health_ally
-        # self.prev_health_ally = currentHealth_ally
-        # self.prev_health_enemy = currentHealth_enemy
+        num_ally = sum(ally[:, 1] > 0)
+        num_enemy = sum(enemy[:, 1] > 0)
+
+        print('numAlly : {}, numEnemy : {}, nb_step : {}'.format(num_ally, num_enemy, self.nb_step))
+
+        if (num_ally == 0 or num_enemy == 0) and self.nb_step > 10:
+            done = True
+
+        if self.flag_restart == 1:
+            done = True
+
+        # update prev_health_ally
+        # self.prev_health_ally = self.currentHealth_ally
+        # self.prev_health_enemy = self.currentHealth_enemy
 
         return done
