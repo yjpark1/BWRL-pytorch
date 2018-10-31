@@ -14,6 +14,9 @@ import tornado.websocket
 import time
 from tornado import iostream
 from tornado.options import options
+from util.CustomLog import cLogger
+
+logger = cLogger.getLogger()
 
 try:
     from urlparse import urljoin, urldefrag
@@ -32,15 +35,14 @@ class Connection(object):
 
     def _read(self):
         self.write("return values...")
-        logger.info("in>>>>>>>>>>>>>>>>>>>>")
 
     def _eol_callback(self, data):
-        logger.info("callback function...")
         self.handle_data(data)
 
     def connection_ready(sock, fd, events):
         while True:
             connection, address = sock.accept()
+
 
 class CommunicationHandler(Connection):
     """Put your app logic here"""
@@ -48,12 +50,14 @@ class CommunicationHandler(Connection):
         self.stream.write(data)
         self._read()
 
+
 class MainHandler(tornado.web.RequestHandler):
     instr = None
     outstr = None
 
     def post(self):
         gvar.token_deque.append(self.request.body)
+        logger.info('receive msg: ' + str(len(gvar.token_deque)))
         gvar.service_flag = 1
         gvar.flag_restart = self.request.headers.get('isRestarted')
         self.flag_restart = gvar.flag_restart
@@ -66,6 +70,7 @@ class MainHandler(tornado.web.RequestHandler):
         gvar.release_action = False
         sendAction = self.set_action()
         self.write(sendAction)
+        logger.info('send msg')
 
     def on_message(self, message):
         # logger.debug("Client %s received a message : %s" % (self.id, message))

@@ -137,6 +137,7 @@ class StarCraftEnvironment(object):
                 gvar.release_action = True
                 gvar.action = action_token
             else:
+                logger.info('state\n' + str(token))
                 break
         return token
 
