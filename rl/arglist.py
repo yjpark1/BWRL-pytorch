@@ -1,4 +1,4 @@
-max_episode_len = 25
+max_episode_len = 0
 display = False
 num_episodes = 60000
 learning_rate = 1e-3

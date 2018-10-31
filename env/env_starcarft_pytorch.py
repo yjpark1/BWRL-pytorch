@@ -3,6 +3,7 @@ import numpy as np
 import msgpack
 from main import GlobalVariable as gvar
 from util.CustomLog import cLogger
+import time
 import math
 
 logger = cLogger.getLogger()
@@ -40,22 +41,8 @@ class StarCraftEnvironment(object):
         self.nb_step = 0
         self.R = 0
 
-        # self.attack_range_of_vulture = 5
-        #
-        # self.v_x = [0] * self.num_ally
-        # self.v_y = [0] * self.num_ally
-        #
-        # #self.z1_x, self.z1_y, self.z2_x, self.z2_y = 0,0,0,0
-        # self.z_x = [0] * self.num_enemy
-        # self.z_y = [0] * self.num_enemy
-        #
-        # # Health(hp(1) + shield(2)) change ratio of vulture
-        # # Health(hp(1) + shield(2)) change ratio of zealot
-        # self.dead_count_of_vulture = 0
-        # self.dead_count_of_zealot  = 0
-        # self.attacking_1, self.attacking_2 = 0, 0 # attacking_status_of_vulture
-        # self.under_attack_1, self.under_attack_2 = 0, 0  # status of vulture under attach
-        # self.token_unit = None
+        # scenario information
+        self.attack_range_of_vulture = 5 * 32
 
     def step(self, action):
         """Run one timestep of the environment's dynamics.
@@ -127,6 +114,7 @@ class StarCraftEnvironment(object):
     def _get_token(self):
         while True:
             if len(gvar.token_deque) == 0:
+                time.sleep(1e-2)
                 continue
 
             token = gvar.token_deque.pop()
@@ -227,17 +215,19 @@ class StarCraftEnvironment(object):
 
         return obs
 
-    def _get_Health(self):
+    def _get_Health(self, token_unit):
         # isEnemy
-        ally = self.token_unit[self.token_unit[:, 0] == 0]
-        enemy = self.token_unit[self.token_unit[:, 0] == 1]
+        ally = token_unit[token_unit[:, 0] == 0]
+        enemy = token_unit[token_unit[:, 0] == 1]
 
-        self.currentHealth_ally = sum(ally[:, 1])
-        self.currentHealth_enemy = sum(enemy[:, 1]) + sum(enemy[:, 2])
+        Health_ally = sum(ally[:, 1]) + sum(enemy[:, 2])
+        Health_enemy = sum(enemy[:, 1]) + sum(enemy[:, 2])
 
-    # _get_reward 함수와 _get_done 함수는 서로 얽혀 있음. 수정 시 주의요
+        return Health_ally, Health_enemy
+
     def _get_reward(self):
         """
+        token_unit: [isEnemy, HP, Sheild, Cooldown, X, Y, UnitType, ID, isAttacking, isMoving, isUnderAttack]
         attack range of vulture : 5
         vulture v1_x, v1_y, v2_x, v2_y
         zealot z1_x, z1_y, z2_x, z2_y
@@ -248,69 +238,76 @@ class StarCraftEnvironment(object):
         attacking status of vulture = attacking_1, attacking_2
         status of vulture under attach = under_attack_1, under_attack_2
         """
-        # get_len_ally_in_range = len(token_unit_enemy[-1, :]) - 9
-        # self.n_vulture_in_range = token_unit_enemy[:, -get_len_ally_in_range:]
-        # self.dead_count_of_vulture = sum(token_unit_ally[:, 1] == 0)
-        # self.dead_count_of_vulture = sum(token_unit_enemy[:, 1] == 0)
-        # self.attack_range_of_vulture = 5
-        #
-        # reward = 0
-        # # get health
-        # self._get_Health()
-        # currentHealth_ally = self.currentHealth_ally
-        # currentHealth_enemy = self.currentHealth_enemy
-        #
-        # # reward by health change
-        # delta_ally = self.prev_health_ally - currentHealth_ally
-        # delta_enemy = self.prev_health_enemy - currentHealth_enemy
-        #
-        # # scaling delta
-        # delta_ally = 10 * delta_ally / self.default_health_ally
-        # delta_enemy = 10 * delta_enemy / self.default_health_enemy
-        #
-        # # self.v1_x, self.v1_y, self.v2_x, self.v2_y = token_unit_ally[0,4], token_unit_ally[0,5], token_unit_ally[1,4], token_unit_ally[1,5]
-        #
-        # for i in range(self.num_ally):
-        #     self.v_x[i] = self.token_unit_ally[i, 4]
-        #     self.v_y[i] = self.token_unit_ally[i, 5]
-        #
-        # # self.z1_x, self.z1_y, self.z2_x, self.z2_y, self.z3_x, self.z3_y = token_unit_enemy[0, 4], token_unit_enemy[0, 5], token_unit_enemy[1, 4], token_unit_enemy[1, 5],token_unit_enemy[2, 4], token_unit_enemy[2, 5]
-        #
-        # for j in range(self.num_ally):
-        #     self.z_x[j] = self.token_unit_enemy[j, 4]
-        #     self.z_y[j] = self.token_unit_enemy[j, 5]
-        #
-        # n_count_in_range = 0
-        # for i in range(self.num_ally):
-        #     for j in range(self.num_ally):
-        #         if math.sqrt(math.pow(self.z_x[j] - self.v_x[i], 2) + math.pow(self.z_y[j] - self.v_y[j],
-        #                                                                        2)) < self.n_vulture_in_range:
-        #             n_count_in_range = n_count_in_range + 1
-        #
-        # # Health(hp(1) + shield(2)) change ratio of vulture
-        # # Health(hp(1) + shield(2)) change ratio of zealot
-        # self.attacking_1, self.attacking_2 = self.token_unit_ally[0, 8], self.token_unit_ally[0, 8]  # attacking_status_of_vulture
-        # self.under_attack_1, self.under_attack_2 = self.token_unit_ally[0, 10], self.token_unit_ally[1, 10]  # status of vulture under attach
-        #
-        # # 1. n count agent in range
-        # reward = reward + n_count_in_range
-        #
-        # # 2. change ratio hp
-        # reward = reward + (-0.4 * delta_ally / self.default_health_ally - 0.6 * delta_enemy / self.default_health_enemy)
-        #
-        # # 3. dead unit handling
-        # reward = reward + (-0.4 * self.dead_count_of_vulture + 0.6 * self.dead_count_of_zealot)
-        #
-        # # 4. isAttacking and underAttack handling
-        # reward = reward + (self.attacking_1 + self.attacking_2) -(self.under_attack_1 + self.under_attack_2)
-        #
+        token_unit_ally = self.token_unit[self.token_unit[:, 0] == 0, :]
+        token_unit_enemy = self.token_unit[self.token_unit[:, 0] == 1, :]
+
+        # get health
+        currentHealth_ally, currentHealth_enemy = self._get_Health(self.token_unit)
+
+        # reward by health change
+        delta_ally = self.prev_health_ally - currentHealth_ally
+        delta_enemy = self.prev_health_enemy - currentHealth_enemy
+
+        # scaling delta
+        delta_ally = 10 * delta_ally / self.default_health_ally
+        delta_enemy = 10 * delta_enemy / self.default_health_enemy
+
+        # units count alive
+        hp_ally = token_unit_ally[:, 3] + token_unit_ally[:, 4]
+        hp_enemy = token_unit_enemy[:, 3] + token_unit_enemy[:, 4]
+
+        token_unit_ally = token_unit_ally[hp_ally > 0].reshape((-1, 11))
+        token_unit_enemy = token_unit_enemy[hp_enemy > 0].reshape((-1, 11))
+
+        # (x, y)
+        pos_ally = token_unit_ally[:, 4:6]
+        pos_enemy = token_unit_enemy[:, 4:6]
+
+        # num units dead
+        num_dead_ally = self.num_ally - len(token_unit_ally)
+        num_dead_enemy = self.num_enemy - len(token_unit_enemy)
+
+        num_enemy_on_range = 0
+        for a in pos_ally:
+            for b in pos_enemy:
+                cnt = 1 if self._dist(a, b) <= self.attack_range_of_ally else 0
+                num_enemy_on_range += cnt
+
+        # attacking_status_of_vulture & status of vulture under attack
+        is_attack = sum(token_unit_ally[:, 8])
+        is_underattack = sum(token_unit_ally[:, 10])
+
+        reward = 0
+        # 1. n count agent in range
+        reward += num_enemy_on_range * 0.5
+
+        # 2. change ratio hp
+        reward += (-0.4 * delta_ally / self.default_health_ally - 0.6 * delta_enemy / self.default_health_enemy)
+
+        # 3. dead unit handling
+        reward += (-0.4 * num_dead_ally + 0.6 * num_dead_enemy)
+
+        # 4. isAttacking and underAttack handling
+        reward += (is_attack - is_underattack)
+
+        # update hp previous
+        self.prev_health_ally = currentHealth_ally
+        self.prev_health_enemy = currentHealth_enemy
+
         # ## for debug
         # self.R += reward
         #
         # self.hist.append(np.array([self.nb_step, self.prev_health_ally, currentHealth_ally,
         #                            self.prev_health_enemy, currentHealth_enemy, reward, self.R]))
-        reward = 1
+        # reward = 1
         return reward
+
+    def _dist(self, a, b):
+        '''
+        a = np.array([0, 0])
+        b = np.array([1, 1])
+        '''
+        return sum((a - b) ** 2) ** 0.5
 
     def _get_done(self):
         done = False

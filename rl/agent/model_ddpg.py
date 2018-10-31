@@ -100,23 +100,11 @@ class Trainer:
         return actions
 
     def process_batch(self, experiences):
-        s0 = []
-        a0 = []
-        r = []
-        s1 = []
-        d = []
-        for e in experiences:
-            s0.append(torch.cat([step.state0 for step in e], dim=0))
-            a0.append(torch.stack([step.action for step in e], dim=0))
-            r.append(torch.stack([step.reward for step in e], dim=0))
-            s1.append(torch.cat([step.state1 for step in e], dim=0))
-            d.append(torch.stack([step.terminal1 for step in e], dim=0))
-
-        s0 = torch.cat(s0, dim=1)
-        a0 = torch.stack(a0, dim=1)
-        r = torch.stack(r, dim=1)
-        s1 = torch.cat(s1, dim=1)
-        d = torch.stack(d, dim=1)
+        s0 = torch.cat([e.state0[0] for e in experiences], dim=0)
+        a0 = torch.stack([e.action for e in experiences], dim=0)
+        r = torch.stack([e.reward for e in experiences], dim=0)
+        s1 = torch.cat([e.state1[0] for e in experiences], dim=0)
+        d = torch.stack([e.terminal1 for e in experiences], dim=0)
 
         return s0, a0, r, s1, d
 

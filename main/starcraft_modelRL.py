@@ -75,15 +75,11 @@ def rl_learn(cnt=0):
         rewards = rewards.mean()
         episode_step += 1
 
-        terminal = (episode_step >= arglist.max_episode_len)
+        terminal = arglist.max_episode_len and episode_step >= arglist.max_episode_len
         terminal = agent.process_done(done or terminal)
         # collect experience
         # obs, actions, rewards, done
         agent.memory.append(obs, actions, rewards, terminal, training=True)
-        # torch.Size([1, 2, 36])
-        # torch.Size([1, 2, 5])
-        # torch.Size([])
-        # torch.Size([])
         # next observation
         obs = deepcopy(new_obs)
 
@@ -129,7 +125,7 @@ def rl_learn(cnt=0):
 
         # update all trainers, if not in display or benchmark mode
         loss = [np.nan, np.nan]
-        if (train_step > arglist.warmup_steps) and (train_step % 600 == 0):
+        if (train_step > arglist.warmup_steps) and (train_step % 200 == 0):
             # optimize actor-critic
             loss = agent.optimize()
             loss = np.array([x.data.item() for x in loss])
