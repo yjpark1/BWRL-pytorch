@@ -57,10 +57,9 @@ class MainHandler(tornado.web.RequestHandler):
 
     def post(self):
         gvar.token_deque.append(self.request.body)
-        logger.info('receive msg: ' + str(len(gvar.token_deque)))
+        # logger.info('receive msg: ' + str(len(gvar.token_deque)))
         gvar.service_flag = 1
-        gvar.flag_restart = self.request.headers.get('isRestarted')
-        self.flag_restart = gvar.flag_restart
+        self.flag_restart = int(self.request.headers.get('isRestarted'))
 
         while True:
             time.sleep(1e-2)
@@ -70,7 +69,7 @@ class MainHandler(tornado.web.RequestHandler):
         gvar.release_action = False
         sendAction = self.set_action()
         self.write(sendAction)
-        logger.info('send msg')
+        # logger.info('send msg')
 
     def on_message(self, message):
         # logger.debug("Client %s received a message : %s" % (self.id, message))

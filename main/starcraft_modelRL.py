@@ -92,6 +92,7 @@ def rl_learn(cnt=0):
         # for save & print history
         terminal_verbose = terminal or done
         if terminal or done:
+            print('{} episode is ended'.format(nb_episode))
             terminal_reward.append(np.mean(rewards))
             # save terminal state
             # process observation

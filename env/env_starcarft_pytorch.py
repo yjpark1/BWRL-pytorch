@@ -73,7 +73,7 @@ class StarCraftEnvironment(object):
         reward = self._get_reward()
         done = self._get_done()
         info = dict()
-        logger.info('step: {}'.format(self.nb_step))
+        # logger.info('step: {}'.format(self.nb_step))
 
         return next_state, reward, done, info
 
