@@ -85,7 +85,7 @@ def rl_learn(cnt=0):
 
         # episode_rewards.append(rewards)
         rewards = rewards.item()
-        for i, rew in enumerate([rewards] * env.nb_agents):
+        for i, rew in enumerate([rewards]):
             episode_rewards[-1] += rew
             agent_rewards[i][-1] += rew
 
