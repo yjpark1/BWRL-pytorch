@@ -59,8 +59,7 @@ class MainHandler(tornado.web.RequestHandler):
         gvar.token_deque.append(self.request.body)
         # logger.info('receive msg: ' + str(len(gvar.token_deque)))
         gvar.service_flag = 1
-        gvar.flag_restart = self.request.headers.get('isRestarted')
-        self.flag_restart = gvar.flag_restart
+        self.flag_restart = int(self.request.headers.get('isRestarted'))
 
         while True:
             time.sleep(1e-2)

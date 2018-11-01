@@ -82,6 +82,7 @@ class StarCraftEnvironment(object):
         reward = self._get_reward()
         done = self._get_done()
         info = dict()
+<<<<<<< HEAD
 
         # save step log
         hp_a, hp_e = self._get_Health(self.token_unit)
@@ -108,6 +109,9 @@ class StarCraftEnvironment(object):
             log = open('results/train_episode_log.txt', 'a')
             log.write(msg + '\n')
             log.close()
+=======
+        # logger.info('step: {}'.format(self.nb_step))
+>>>>>>> b7a15ec9296b42062c4ed4c34425bdbbc99c813c
 
         return next_state, reward, done, info
 
