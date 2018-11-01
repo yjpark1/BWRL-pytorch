@@ -4,6 +4,7 @@ import msgpack
 from main import GlobalVariable as gvar
 from util.CustomLog import cLogger
 import time
+from copy import deepcopy
 import math
 
 logger = cLogger.getLogger()
@@ -123,6 +124,9 @@ class StarCraftEnvironment(object):
         initial_state = self._process_token()
         self.R = 0
 
+        self.prev_health_ally = 80 * 2
+        self.prev_health_enemy = 160 * 3
+
         return initial_state
 
     def _make_action_bwapi(self, action):
@@ -239,18 +243,20 @@ class StarCraftEnvironment(object):
         # unit state
         # check dead ally to calibrate state
         token_unit = self._calibrate_token_unit(token_unit)
-        obs = self._make_observation(token_unit)
 
         # to use for reward
         # resource: mineral, gas
-        self.token_unit = token_unit
+        self.token_unit = deepcopy(token_unit)
         self.mineral = token_resources[0]  # win count
         self.gas = token_resources[1]  # game count
+
+        # make observation
+        obs = self._make_observation(token_unit)
 
         return obs
 
     def _get_Health(self, token_unit):
-        # isEnemy
+        # isEnemysf
         ally = token_unit[token_unit[:, 0] == 0]
         enemy = token_unit[token_unit[:, 0] == 1]
 
@@ -287,8 +293,8 @@ class StarCraftEnvironment(object):
         delta_enemy = 10 * delta_enemy / self.default_health_enemy
 
         # units count alive
-        hp_ally = token_unit_ally[:, 3] + token_unit_ally[:, 4]
-        hp_enemy = token_unit_enemy[:, 3] + token_unit_enemy[:, 4]
+        hp_ally = token_unit_ally[:, 1] + token_unit_ally[:, 2]
+        hp_enemy = token_unit_enemy[:, 1] + token_unit_enemy[:, 2]
 
         token_unit_ally = token_unit_ally[hp_ally > 0].reshape((-1, 11))
         token_unit_enemy = token_unit_enemy[hp_enemy > 0].reshape((-1, 11))
