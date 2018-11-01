@@ -46,13 +46,13 @@ class StarCraftEnvironment(object):
         # scenario information
         self.attack_range_of_ally = 5 * 32
 
-        log = open('results/train_step_log.txt', 'w')
-        log.write('train start... \n')
-        log.close()
-
-        log = open('results/train_episode_log.txt', 'w')
-        log.write('train start... \n')
-        log.close()
+        # log = open('results/train_step_log.txt', 'w')
+        # log.write('train start... \n')
+        # log.close()
+        #
+        # log = open('results/train_episode_log.txt', 'w')
+        # log.write('train start... \n')
+        # log.close()
 
     def step(self, action):
         """Run one timestep of the environment's dynamics.
@@ -85,30 +85,30 @@ class StarCraftEnvironment(object):
         info = dict()
 
         # save step log
-        hp_a, hp_e = self._get_Health(self.token_unit)
-        msg = "episode: {}, step: {}, reward: {}, done: {}, allyHP: {}, enemyHP: {}".format(
-                    self.nb_episode,
-                    self.nb_step,
-                    round(reward, 3),
-                    done,
-                    hp_a,
-                    hp_e
-                    )
-        log = open('results/train_step_log.txt', 'a')
-        log.write(msg + '\n')
-        log.close()
-
-        # save episode log
-        if done:
-            self.nb_episode += 1
-            msg = "episode: {}, step: {}, reward: {}, done: {}".format(
-                        self.nb_episode,
-                        self.nb_step,
-                        round(self.R, 3),
-                        done)
-            log = open('results/train_episode_log.txt', 'a')
-            log.write(msg + '\n')
-            log.close()
+        # hp_a, hp_e = self._get_Health(self.token_unit)
+        # msg = "episode: {}, step: {}, reward: {}, done: {}, allyHP: {}, enemyHP: {}".format(
+        #             self.nb_episode,
+        #             self.nb_step,
+        #             round(reward, 3),
+        #             done,
+        #             hp_a,
+        #             hp_e
+        #             )
+        # log = open('results/train_step_log.txt', 'a')
+        # log.write(msg + '\n')
+        # log.close()
+        #
+        # # save episode log
+        # if done:
+        #     self.nb_episode += 1
+        #     msg = "episode: {}, step: {}, reward: {}, done: {}".format(
+        #                 self.nb_episode,
+        #                 self.nb_step,
+        #                 round(self.R, 3),
+        #                 done)
+        #     log = open('results/train_episode_log.txt', 'a')
+        #     log.write(msg + '\n')
+        #     log.close()
 
         return next_state, reward, done, info
 
@@ -325,7 +325,7 @@ class StarCraftEnvironment(object):
         reward += (-0.4 * delta_ally / self.default_health_ally - 0.6 * delta_enemy / self.default_health_enemy)
 
         # 3. dead unit handling
-        reward += (-0.4 * num_dead_ally + 0.6 * num_dead_enemy)
+        reward += (-0.4 * num_dead_ally + 0.6 * num_dead_enemy) * 20
 
         # 4. isAttacking and underAttack handling
         reward += (is_attack - is_underattack)
