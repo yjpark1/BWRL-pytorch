@@ -40,9 +40,18 @@ class StarCraftEnvironment(object):
         self.default_health_enemy = 160 * len(self.env_details['enemy'])
         self.nb_step = 0
         self.R = 0
+        self.nb_episode = 0
 
         # scenario information
         self.attack_range_of_ally = 5 * 32
+
+        log = open('results/train_step_log.txt', 'w')
+        log.write('train start... \n')
+        log.close()
+
+        log = open('results/train_episode_log.txt', 'w')
+        log.write('train start... \n')
+        log.close()
 
     def step(self, action):
         """Run one timestep of the environment's dynamics.
@@ -73,7 +82,32 @@ class StarCraftEnvironment(object):
         reward = self._get_reward()
         done = self._get_done()
         info = dict()
-        logger.info('step: {}'.format(self.nb_step))
+
+        # save step log
+        hp_a, hp_e = self._get_Health(self.token_unit)
+        msg = "episode: {}, step: {}, reward: {}, done: {}, allyHP: {}, enemyHP: {}".format(
+                    self.nb_episode,
+                    self.nb_step,
+                    round(reward, 3),
+                    done,
+                    hp_a,
+                    hp_e
+                    )
+        log = open('results/train_step_log.txt', 'a')
+        log.write(msg + '\n')
+        log.close()
+
+        # save episode log
+        if done:
+            self.nb_episode += 1
+            msg = "episode: {}, step: {}, reward: {}, done: {}".format(
+                        self.nb_episode,
+                        self.nb_step,
+                        round(self.R, 3),
+                        done)
+            log = open('results/train_episode_log.txt', 'a')
+            log.write(msg + '\n')
+            log.close()
 
         return next_state, reward, done, info
 
@@ -220,7 +254,7 @@ class StarCraftEnvironment(object):
         ally = token_unit[token_unit[:, 0] == 0]
         enemy = token_unit[token_unit[:, 0] == 1]
 
-        Health_ally = sum(ally[:, 1]) + sum(enemy[:, 2])
+        Health_ally = sum(ally[:, 1]) + sum(ally[:, 2])
         Health_enemy = sum(enemy[:, 1]) + sum(enemy[:, 2])
 
         return Health_ally, Health_enemy
@@ -295,7 +329,7 @@ class StarCraftEnvironment(object):
         self.prev_health_enemy = currentHealth_enemy
 
         # ## for debug
-        # self.R += reward
+        self.R += reward
         #
         # self.hist.append(np.array([self.nb_step, self.prev_health_ally, currentHealth_ally,
         #                            self.prev_health_enemy, currentHealth_enemy, reward, self.R]))
@@ -321,8 +355,6 @@ class StarCraftEnvironment(object):
         # test1 = (self.currentHealth_ally - self.prev_health_ally) >= (self.default_health_ally - 8)
         num_ally = sum(ally[:, 1] > 0)
         num_enemy = sum(enemy[:, 1] > 0)
-
-        print('numAlly : {}, numEnemy : {}, nb_step : {}'.format(num_ally, num_enemy, self.nb_step))
 
         if (num_ally == 0 or num_enemy == 0) and self.nb_step > 10:
             done = True

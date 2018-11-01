@@ -116,8 +116,6 @@ def rl_learn(cnt=0):
                     obs = env.reset()
                     if sum(env.token_unit[:, 1] > 0) == len(env_details['enemy']) + len(env_details['ally']):
                         break
-                    else:
-                        print('skip meaningless obs')
 
             episode_step = 0
             nb_episode += 1
@@ -156,9 +154,9 @@ def rl_learn(cnt=0):
                 print(msg)
 
                 # save log
-                log = open('results/train_log.txt', 'a')
-                log.write(msg + '\n')
-                log.close()
+                # log = open('results/train_log.txt', 'a')
+                # log.write(msg + '\n')
+                # log.close()
 
                 terminal_reward = []
                 t_start = time.time()
