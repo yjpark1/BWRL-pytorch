@@ -24,6 +24,9 @@ class StarCraftEnvironment(object):
         self.prev_health_ally = 0
         self.prev_health_enemy = 0
 
+        self.prev_num_dead_ally = 0
+        self.prev_num_dead_enemy = 0
+
         self.agent_name = agent_name
         self.env_details = env_details
         self.num_ally = len(self.env_details['ally'])
@@ -44,7 +47,8 @@ class StarCraftEnvironment(object):
         self.nb_episode = 0
 
         # scenario information
-        self.attack_range_of_ally = 5 * 32
+        self.min_attack_range_of_ally = 0.5 * 32
+        self.max_attack_range_of_ally = 5 * 32
 
         # log = open('results/train_step_log.txt', 'w')
         # log.write('train start... \n')
@@ -126,6 +130,10 @@ class StarCraftEnvironment(object):
 
         self.prev_health_ally = 80 * 2
         self.prev_health_enemy = 160 * 3
+
+        self.prev_num_dead_ally = 0
+        self.prev_num_dead_enemy = 0
+
 
         return initial_state
 
@@ -285,6 +293,8 @@ class StarCraftEnvironment(object):
         currentHealth_ally, currentHealth_enemy = self._get_Health(self.token_unit)
 
         # reward by health change
+        delta_enemy_unnormalized = self.prev_health_enemy - currentHealth_enemy
+
         delta_ally = self.prev_health_ally - currentHealth_ally
         delta_enemy = self.prev_health_enemy - currentHealth_enemy
 
@@ -307,10 +317,13 @@ class StarCraftEnvironment(object):
         num_dead_ally = self.num_ally - len(token_unit_ally)
         num_dead_enemy = self.num_enemy - len(token_unit_enemy)
 
+        delta_num_dead_ally = self.prev_num_dead_ally - num_dead_ally
+        delta_num_dead_enemy = self.prev_num_dead_enemy - num_dead_enemy
+
         num_enemy_on_range = 0
         for a in pos_ally:
             for b in pos_enemy:
-                cnt = 1 if self._dist(a, b) <= self.attack_range_of_ally else 0
+                cnt = 1 if self._dist(a, b) > self.min_attack_range_of_ally and self._dist(a, b) < self.max_attack_range_of_ally else 0
                 num_enemy_on_range += cnt
 
         # attacking_status_of_vulture & status of vulture under attack
@@ -322,17 +335,32 @@ class StarCraftEnvironment(object):
         reward += num_enemy_on_range * 0.5
 
         # 2. change ratio hp
-        reward += (-0.4 * delta_ally / self.default_health_ally - 0.6 * delta_enemy / self.default_health_enemy)
+        reward += (-0.8 * delta_ally / self.default_health_ally + 0.2 * delta_enemy / self.default_health_enemy) * 20
 
         # 3. dead unit handling
-        reward += (-0.4 * num_dead_ally + 0.6 * num_dead_enemy) * 20
+        reward += (-0.4 * delta_num_dead_ally + 0.6 * delta_num_dead_enemy) * 30
 
         # 4. isAttacking and underAttack handling
         reward += (is_attack - is_underattack)
 
+        # 5. sum of distance between ally units
+        distance_between_allies = 0
+        for i, a in enumerate(pos_ally):
+            for j, b in enumerate(pos_ally):
+                if i != j:
+                    distance_between_allies += self._dist(a, b)
+
+        reward -= (distance_between_allies / 64 * 8 * 4) * 10
+
+        # 6. Once allies attack same unit at one time, the more it decrease hp of the the enemy, the more it get reward!
+        reward += sum(math.pow(5, delta_enemy_unnormalized / 10))
+
         # update hp previous
         self.prev_health_ally = currentHealth_ally
         self.prev_health_enemy = currentHealth_enemy
+
+        self.prev_num_dead_ally = num_dead_ally
+        self.prev_num_dead_enemy = num_dead_enemy
 
         # ## for debug
         self.R += reward
