@@ -337,37 +337,45 @@ class StarCraftEnvironment(object):
         is_underattack = sum(token_unit_ally[:, 10])
 
         reward = 0
-        # 1. n count agent in range
-        reward += num_enemy_on_range * 0.5
+        # 1. n count agent in range ( 0 ~ 6 )
+        r1 = num_enemy_on_range * 0.1
 
-        # 2. change ratio hp
-        reward += (-0.8 * delta_ally / self.default_health_ally + 0.2 * delta_enemy / self.default_health_enemy) * 20
+        # 2. change ratio hp ( -0.8 * 0~1 + 0.2 * 0~1 => -0.8 ~ 0.2)   * 20  => -16 ~ 4
+        r2 = (-0.8 * delta_ally / self.default_health_ally + 0.2 * delta_enemy / self.default_health_enemy) * 50
 
-        # 3. dead unit handling
-        reward += (-0.4 * delta_num_dead_ally + 0.6 * delta_num_dead_enemy) * 30
+        # 3. dead unit handling  (-0.4 *2 + 0.6 * 3) = (-0.8 ~ 1.8) = -24 ~ 54
+        r3 = (+0.4 * delta_num_dead_ally - 0.6 * delta_num_dead_enemy) * 5
+        # if r3 > 0:
+        #     print('delta_num_dead_ally : {}, delta_num_dead_enemy : {}'.format(delta_num_dead_ally, delta_num_dead_enemy))
 
-        # 4. isAttacking and underAttack handling
-        reward += (is_attack - is_underattack)
+        # 4. isAttacking and underAttack handling ( -2 ~ 2 )
+        r4 = (is_attack - is_underattack) / 2
 
-        # 5. sum of distance between ally units
+        # 5. sum of distance between ally units  ( 0~ 2896) 2896.309375740099 -> d between (0,0), (2048,2048) --> 0 ~ 10
         distance_between_allies = 0
         for i, a in enumerate(pos_ally):
             for j, b in enumerate(pos_ally):
                 if i != j:
                     distance_between_allies += self._dist(a, b)
 
-        reward -= (distance_between_allies / 64 * 8 * 4) * 10
+        p1 = (distance_between_allies / 2896) * 10
 
-
-        # 6. the more positions of allies close center of map. the more those get rewards. It is for agents not to go edge part and then get stuck from enemies
-        d_agent_and_center = 0
+        # 6. the more positions of allies close center of map. the more those get rewards.
+        # It is for agents not to go edge part and then get stuck from enemies
+        # d between (0,0), (1024,1024) -> 1448.1546878700494   --> 0 ~ 10
+        d_agent_and_center = []
         for a in pos_ally:
-            d_agent_and_center += sum( (a - np.asarray([1024, 1024])) ** 2) ** 0.5
-        reward -= (d_agent_and_center / 1024) * 10
+            d_agent_and_center.append(sum((a - np.asarray([1024, 1024])) ** 2) ** 0.5)
 
-
+        d_agent_and_center = np.asarray(d_agent_and_center)
+        p2 = (np.mean(d_agent_and_center) / 1448) * 0.1
+        if num_dead_ally != 0:
+            p2 = 0
         # 7. Once allies attack same unit at one time, the more it decrease hp of the the enemy, the more it get reward!
-        reward += sum([math.pow(5, int(item / 10)) for item in delta_hp_enemy_each_unnormalized])
+        r5 = sum([math.pow(2, int(item / 10)) if item < 10 else 0 for item in delta_hp_enemy_each_unnormalized]) / 10
+
+        reward = r1 + r2 + r3 + r4 + r5 - p1 - p2
+        #print('r1 : {}, r2 : {}, r3 : {}, r4 : {}, r5 : {}, p1 : {}, p2 : {}'.format(r1, r2, r3, r4, r5, p1, p2))
 
         # update hp previous
         self.prev_health_ally = currentHealth_ally
