@@ -310,8 +310,9 @@ class StarCraftEnvironment(object):
         num_enemy_on_range = 0
         for a in pos_ally:
             for b in pos_enemy:
-                cnt = 1 if self._dist(a, b) <= self.attack_range_of_ally else 0
-                num_enemy_on_range += cnt
+                d = self._dist(a, b)
+                if 32 < d <= self.attack_range_of_ally:
+                    num_enemy_on_range += 1
 
         # attacking_status_of_vulture & status of vulture under attack
         is_attack = sum(token_unit_ally[:, 8])
