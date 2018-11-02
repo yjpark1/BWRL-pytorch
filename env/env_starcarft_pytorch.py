@@ -27,6 +27,8 @@ class StarCraftEnvironment(object):
         self.prev_num_dead_ally = 0
         self.prev_num_dead_enemy = 0
 
+        self.prev_hp_enemy_each = 0
+
         self.agent_name = agent_name
         self.env_details = env_details
         self.num_ally = len(self.env_details['ally'])
@@ -134,6 +136,7 @@ class StarCraftEnvironment(object):
         self.prev_num_dead_ally = 0
         self.prev_num_dead_enemy = 0
 
+        self.prev_hp_enemy_each = [160] * 3
 
         return initial_state
 
@@ -288,12 +291,15 @@ class StarCraftEnvironment(object):
         """
         token_unit_ally = self.token_unit[self.token_unit[:, 0] == 0, :]
         token_unit_enemy = self.token_unit[self.token_unit[:, 0] == 1, :]
+        enemy = self.token_unit[self.token_unit[:, 0] == 1]
 
         # get health
         currentHealth_ally, currentHealth_enemy = self._get_Health(self.token_unit)
 
+        current_hp_enemy_each = enemy[:, 1] + enemy[:, 2]
+
         # reward by health change
-        delta_enemy_unnormalized = self.prev_health_enemy - currentHealth_enemy
+        delta_hp_enemy_each_unnormalized = self.prev_hp_enemy_each - current_hp_enemy_each
 
         delta_ally = self.prev_health_ally - currentHealth_ally
         delta_enemy = self.prev_health_enemy - currentHealth_enemy
@@ -352,8 +358,16 @@ class StarCraftEnvironment(object):
 
         reward -= (distance_between_allies / 64 * 8 * 4) * 10
 
-        # 6. Once allies attack same unit at one time, the more it decrease hp of the the enemy, the more it get reward!
-        reward += sum(math.pow(5, delta_enemy_unnormalized / 10))
+
+        # 6. the more positions of allies close center of map. the more those get rewards. It is for agents not to go edge part and then get stuck from enemies
+        d_agent_and_center = 0
+        for a in pos_ally:
+            d_agent_and_center += sum( (a - np.asarray([1024, 1024])) ** 2) ** 0.5
+        reward -= (d_agent_and_center / 1024) * 10
+
+
+        # 7. Once allies attack same unit at one time, the more it decrease hp of the the enemy, the more it get reward!
+        reward += sum([math.pow(5, int(item / 10)) for item in delta_hp_enemy_each_unnormalized])
 
         # update hp previous
         self.prev_health_ally = currentHealth_ally
@@ -361,6 +375,8 @@ class StarCraftEnvironment(object):
 
         self.prev_num_dead_ally = num_dead_ally
         self.prev_num_dead_enemy = num_dead_enemy
+
+        self.prev_hp_enemy_each = current_hp_enemy_each
 
         # ## for debug
         self.R += reward
