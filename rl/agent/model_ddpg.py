@@ -176,6 +176,8 @@ class Trainer:
         loss_actor += actor_ModelLoss
 
         # Update actor
+        # run random noise to exploration
+        self.actor.train()
         self.actor_optimizer.zero_grad()
         loss_actor.backward()
         torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 0.5)
@@ -184,9 +186,6 @@ class Trainer:
         # Update target env
         self.soft_update(self.target_actor, self.actor, arglist.tau)
         self.soft_update(self.target_critic, self.critic, arglist.tau)
-
-        # run random noise to exploration
-        self.actor.train()
 
         return loss_actor, loss_critic, critic_TDLoss, critic_ModelLoss, actor_maxQ, actor_ModelLoss
 
