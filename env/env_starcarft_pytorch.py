@@ -345,7 +345,7 @@ class StarCraftEnvironment(object):
         r1 = num_enemy_on_range * 0.2 + num_ally_under_dange_range * -0.4
 
         # 2. change ratio hp ( -0.8 * 0~1 + 0.2 * 0~1 => -0.8 ~ 0.2)   * 20  => -16 ~ 4
-        r2 = (-0.8 * delta_ally + 0.2 * delta_enemy) * 20
+        r2 = (-8 * delta_ally + 2 * delta_enemy) * 20
 
 
         # 3. dead unit handling  (-0.4 *2 + 0.6 * 3) = (-0.8 ~ 1.8) = -24 ~ 54

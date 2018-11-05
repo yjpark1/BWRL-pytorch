@@ -26,7 +26,7 @@ def rl_learn(cnt=0):
 
     actor = ActorNetwork(nb_agents=env.nb_agents, input_dim=36, out_dim=[2, 3])
     critic = CriticNetwork(nb_agents=env.nb_agents, input_dim=36 + 5, out_dim=1)
-    memory = SequentialMemory(limit=10000)
+    memory = SequentialMemory(limit=1000000)
     agent = Trainer(actor, critic, memory, noise=ou_xy)
 
     # initialize history
