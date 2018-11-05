@@ -49,7 +49,7 @@ class StarCraftEnvironment(object):
         self.nb_episode = 0
 
         # scenario information
-        self.min_attack_range_of_ally = 0.5 * 32
+        self.min_attack_range_of_ally = 1.5 * 32  # margin 0.5 + zealot attack range 1
         self.max_attack_range_of_ally = 5 * 32
 
         # log = open('results/train_step_log.txt', 'w')
@@ -305,8 +305,8 @@ class StarCraftEnvironment(object):
         delta_enemy = self.prev_health_enemy - currentHealth_enemy
 
         # scaling delta
-        delta_ally = 10 * delta_ally / self.default_health_ally
-        delta_enemy = 10 * delta_enemy / self.default_health_enemy
+        delta_ally = delta_ally / self.default_health_ally
+        delta_enemy = delta_enemy / self.default_health_enemy
 
         # units count alive
         hp_ally = token_unit_ally[:, 1] + token_unit_ally[:, 2]
@@ -327,10 +327,14 @@ class StarCraftEnvironment(object):
         delta_num_dead_enemy = self.prev_num_dead_enemy - num_dead_enemy
 
         num_enemy_on_range = 0
+        num_ally_under_dange_range = 0
         for a in pos_ally:
             for b in pos_enemy:
                 cnt = 1 if self._dist(a, b) > self.min_attack_range_of_ally and self._dist(a, b) < self.max_attack_range_of_ally else 0
                 num_enemy_on_range += cnt
+
+                penalty_cnt = 1 if self._dist(a, b) < self.min_attack_range_of_ally else 0
+                num_ally_under_dange_range += penalty_cnt
 
         # attacking_status_of_vulture & status of vulture under attack
         is_attack = sum(token_unit_ally[:, 8])
@@ -338,13 +342,14 @@ class StarCraftEnvironment(object):
 
         reward = 0
         # 1. n count agent in range ( 0 ~ 6 )
-        r1 = num_enemy_on_range * 0.1
+        r1 = num_enemy_on_range * 0.2 + num_ally_under_dange_range * -0.4
 
         # 2. change ratio hp ( -0.8 * 0~1 + 0.2 * 0~1 => -0.8 ~ 0.2)   * 20  => -16 ~ 4
-        r2 = (-0.8 * delta_ally / self.default_health_ally + 0.2 * delta_enemy / self.default_health_enemy) * 50
+        r2 = (-0.8 * delta_ally + 0.2 * delta_enemy) * 20
+
 
         # 3. dead unit handling  (-0.4 *2 + 0.6 * 3) = (-0.8 ~ 1.8) = -24 ~ 54
-        r3 = (+0.4 * delta_num_dead_ally - 0.6 * delta_num_dead_enemy) * 5
+        r3 = (+0.6 * delta_num_dead_ally - 0.4 * delta_num_dead_enemy) * 30
         # if r3 > 0:
         #     print('delta_num_dead_ally : {}, delta_num_dead_enemy : {}'.format(delta_num_dead_ally, delta_num_dead_enemy))
 
@@ -358,7 +363,7 @@ class StarCraftEnvironment(object):
                 if i != j:
                     distance_between_allies += self._dist(a, b)
 
-        p1 = (distance_between_allies / 2896) * 10
+        p1 = (distance_between_allies / 2896) * 5
 
         # 6. the more positions of allies close center of map. the more those get rewards.
         # It is for agents not to go edge part and then get stuck from enemies
@@ -375,7 +380,9 @@ class StarCraftEnvironment(object):
         r5 = sum([math.pow(2, int(item / 10)) if item < 10 else 0 for item in delta_hp_enemy_each_unnormalized]) / 10
 
         reward = r1 + r2 + r3 + r4 + r5 - p1 - p2
-        #print('r1 : {}, r2 : {}, r3 : {}, r4 : {}, r5 : {}, p1 : {}, p2 : {}'.format(r1, r2, r3, r4, r5, p1, p2))
+
+        if self.check_threshold(r1=r1, r2=r2, r3=r3, r4=r4, r5=r5, p1=p1, p2=p2):
+            print('r1 : {}, r2 : {}, r3 : {}, r4 : {}, r5 : {}, p1 : {}, p2 : {}'.format(r1, r2, r3, r4, r5, p1, p2))
 
         # update hp previous
         self.prev_health_ally = currentHealth_ally
@@ -393,6 +400,14 @@ class StarCraftEnvironment(object):
         #                            self.prev_health_enemy, currentHealth_enemy, reward, self.R]))
         # reward = 1
         return reward
+
+    @staticmethod
+    def check_threshold(**args):
+        for i, k in enumerate(args.keys()):
+            v = args[k]
+            if abs(v) >= 1:
+                return True
+        return False
 
     def _dist(self, a, b):
         '''
