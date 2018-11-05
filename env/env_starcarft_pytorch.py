@@ -323,7 +323,7 @@ class StarCraftEnvironment(object):
         reward += num_enemy_on_range * 0.5
 
         # 2. change ratio hp
-        reward += (-0.4 * delta_ally / self.default_health_ally + 0.6 * delta_enemy / self.default_health_enemy)
+        reward += (-0.4 * delta_ally + 0.6 * delta_enemy)
 
         # 3. dead unit handling
         reward += (-0.4 * num_dead_ally + 0.6 * num_dead_enemy) * 20
