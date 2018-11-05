@@ -93,6 +93,8 @@ class Trainer:
         :param state: state (Numpy array)
         :return: sampled action (Numpy array)
         """
+        # add random noise to exploration
+        self.actor.eval()
         # state = np.expand_dims(state, axis=0)
         state = state.to(self.device)
         actions, _ = self.actor.forward(state)
@@ -125,13 +127,12 @@ class Trainer:
         s1 = s1.to(self.device)
         d = d.to(self.device)
 
-        # stop random noise to exploration
-        self.actor.eval()
+        # run random noise to exploration
+        self.actor.train()
+
         # ---------------------- optimize critic ----------------------
         # Use target actor exploitation policy here for loss evaluation
-        self.target_actor.train()  # to add noise
         a1, _ = self.target_actor.forward(s1)
-        self.target_actor.eval()
         a1 = a1.detach()
 
         # target critic (1)
@@ -191,8 +192,6 @@ class Trainer:
         loss_actor += actor_ModelLoss
 
         # Update actor
-        # run random noise to exploration
-        self.actor.train()
         self.actor_optimizer.zero_grad()
         loss_actor.backward()
         torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 1.)
