@@ -27,11 +27,14 @@ class Trainer:
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), arglist.learning_rate)
 
         self.critic = critic.to(self.device)
-        self.target_critic = copy.deepcopy(critic).to(self.device)
+        self.target_critic1 = copy.deepcopy(critic).to(self.device)
+        self.target_critic2 = copy.deepcopy(critic).to(self.device)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), arglist.learning_rate)
 
         self.target_actor.eval()
-        self.target_critic.eval()
+        self.target_critic1.eval()
+        self.target_critic2.eval()
+        self.n_updates = 0
 
         self.noise = noise
 
@@ -79,8 +82,7 @@ class Trainer:
         return done
 
     def to_onehot(self, actions):
-        # actions = np.argmax(actions, axis=-1)
-        actions = np.random.sample(3,1, p=actions)
+        actions = np.argmax(actions, axis=-1)
         actions = to_categorical(actions, num_classes=3)
         actions = actions.astype('float32')
         return actions
@@ -91,6 +93,8 @@ class Trainer:
         :param state: state (Numpy array)
         :return: sampled action (Numpy array)
         """
+        # add random noise to exploration
+        self.actor.eval()
         # state = np.expand_dims(state, axis=0)
         state = state.to(self.device)
         actions, _ = self.actor.forward(state)
@@ -124,15 +128,26 @@ class Trainer:
         s1 = s1.to(self.device)
         d = d.to(self.device)
 
-        # stop random noise to exploration
-        self.actor.eval()
+        # run random noise to exploration
+        self.actor.train()
+
         # ---------------------- optimize critic ----------------------
         # Use target actor exploitation policy here for loss evaluation
         a1, _ = self.target_actor.forward(s1)
         a1 = a1.detach()
-        q_next, _ = self.target_critic.forward(s1, a1)
-        q_next = q_next.detach()
-        q_next = torch.squeeze(q_next)
+
+        # target critic (1)
+        q_next1, _ = self.target_critic1.forward(s1, a1)
+        q_next1 = q_next1.detach()
+        q_next1 = torch.squeeze(q_next1)
+        # target critic (2)
+        q_next2, _ = self.target_critic2.forward(s1, a1)
+        q_next2 = q_next2.detach()
+        q_next2 = torch.squeeze(q_next2)
+
+        # min(Q1, Q2)
+        q_next = torch.min(q_next1, q_next2)
+
         # Loss: TD error
         # y_exp = r + gamma*Q'( s1, pi'(s1))
         y_expected = r + GAMMA * q_next * (1. - d)
@@ -150,7 +165,7 @@ class Trainer:
         # Update critic
         self.critic_optimizer.zero_grad()
         loss_critic.backward()
-        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 0.5)
+        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), 1.)
         self.critic_optimizer.step()
 
         # ---------------------- optimize actor ----------------------
@@ -178,16 +193,19 @@ class Trainer:
         loss_actor += actor_ModelLoss
 
         # Update actor
-        # run random noise to exploration
-        self.actor.train()
         self.actor_optimizer.zero_grad()
         loss_actor.backward()
-        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 0.5)
+        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 1.)
         self.actor_optimizer.step()
 
         # Update target env
         self.soft_update(self.target_actor, self.actor, arglist.tau)
-        self.soft_update(self.target_critic, self.critic, arglist.tau)
+
+        if self.n_updates % 2 == 0:
+            self.soft_update(self.target_critic2, self.critic, arglist.tau)
+        else:
+            self.soft_update(self.target_critic1, self.critic, arglist.tau)
+        self.n_updates += 1
 
         return loss_actor, loss_critic, critic_TDLoss, critic_ModelLoss, actor_maxQ, actor_ModelLoss
 

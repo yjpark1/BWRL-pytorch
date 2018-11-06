@@ -1,6 +1,6 @@
 from env.env_starcarft_pytorch import StarCraftEnvironment
 from rl.networks.ac_network_model import ActorNetwork, CriticNetwork
-from rl.agent.model_ddpg import Trainer
+from rl.agent.model_ddpg_TD3 import Trainer
 from main import GlobalVariable as gvar
 import numpy as np
 import torch
@@ -50,7 +50,6 @@ def rl_learn(cnt=0):
 
     verbose_step = False
     verbose_episode = True
-    is_train_started = False
     t_start = time.time()
 
     # log = open('results/train_log.txt', 'w')
@@ -68,7 +67,6 @@ def rl_learn(cnt=0):
             if gvar.service_flag == 0:
                 time.sleep(1e-2)
             else:
-                print(actions)
                 new_obs, rewards, done, info = env.step(actions)
                 break
 
@@ -133,7 +131,6 @@ def rl_learn(cnt=0):
             loss = agent.optimize()
             loss = np.array([x.data.item() for x in loss])
             episode_loss.append(loss)
-            is_train_started = True
 
         if verbose_step:
             if loss == [np.nan, np.nan]:
@@ -141,9 +138,8 @@ def rl_learn(cnt=0):
             print('step: {}, actor_loss: {}, critic_loss: {}'.format(train_step, loss[0], loss[1]))
 
         elif verbose_episode:
-            if is_train_started and terminal_verbose and (len(episode_rewards) % arglist.save_rate == 0):
+            if terminal_verbose and (len(episode_rewards) % arglist.save_rate == 0):
                 monitor_loss = np.mean(np.array(episode_loss)[-1000:], axis=0)
-
 
                 msg1 = "steps: {}, episodes: {}, mean episode reward: {}, reward: {}, time: {}".format(
                     train_step, len(episode_rewards), round(np.mean(episode_rewards[-arglist.save_rate:]), 3),
@@ -169,7 +165,7 @@ def rl_learn(cnt=0):
                 for rew in agent_rewards:
                     final_ep_ag_rewards.append(np.mean(rew[-arglist.save_rate:]))
 
-        # saves final episode rewar d for plotting training curve later
+        # saves final episode reward for plotting training curve later
         if nb_episode > arglist.num_episodes:
             np.save('results/iter_{}_episode_rewards.npy'.format(cnt), episode_rewards)
             print('...Finished total of {} episodes.'.format(len(episode_rewards)))

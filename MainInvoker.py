@@ -4,7 +4,7 @@ import threading
 from util.CustomLog import cLogger
 from connector.HTTPService import connect
 from main import GlobalVariable as gvar
-from main.starcraft_modelRL import rl_learn
+from main.starcraft_modelRL_TD3 import rl_learn
 
 logger = cLogger.getLogger(loggerName='init')
 

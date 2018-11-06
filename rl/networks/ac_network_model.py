@@ -3,6 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+def gaussian(ins, is_training, mean, stddev):
+    if is_training:
+        noise = ins.data.new(ins.size()).normal_(mean, stddev)
+        return ins + noise
+    return ins
+
+
 class TimeDistributed(nn.Module):
     def __init__(self, module):
         super(TimeDistributed, self).__init__()
@@ -83,9 +90,10 @@ class ActorNetwork(nn.Module):
         self.dense1 = nn.Linear(input_dim, 64)
         # return sequence is not exist in pytorch. Instead, output will return with first dimension for sequences.
         self.bilstm = nn.LSTM(64, 32, num_layers=1, bidirectional=True)
-        self.dense2_cont = nn.Linear(64, out_dim[0])
+        self.dense2_cont_1 = nn.Linear(64, out_dim[0])
+        self.dense2_cont_2 = nn.Linear(64, out_dim[0])
         self.dense2_disc = nn.Linear(64, out_dim[1])
-        self.dense3 = nn.Linear(64, input_dim)
+        self.dense3 = nn.Linear(64 + out_dim[0] * 2 + out_dim[1], input_dim)
 
     def forward(self, obs):
         """
@@ -97,12 +105,17 @@ class ActorNetwork(nn.Module):
         hid = F.relu(self.dense1(obs))
         hid, _ = self.bilstm(hid, None)
         hid = F.relu(hid)
-        policy_cont = self.dense2_cont(hid)
-        policy_cont = torch.tanh(policy_cont)
+        policy_cont_1 = self.dense2_cont_1(hid)
+        policy_cont_1 = torch.tanh(policy_cont_1)
+        policy_cont_2 = self.dense2_cont_2(hid)
+        policy_cont_2 = torch.tanh(policy_cont_2)
         policy_disc = self.dense2_disc(hid)
+
+        # policy_disc = gaussian(ins=policy_disc, is_training=self.training, mean=0, stddev=0.2)
+
         policy_disc = nn.Softmax(dim=-1)(policy_disc)
-        policy = torch.cat([policy_cont, policy_disc], dim=-1)
-        next_state = self.dense3(hid)
+        policy = torch.cat([policy_cont_1, policy_cont_2, policy_disc], dim=-1)
+        next_state = self.dense3(torch.cat([hid, policy_cont_1, policy_cont_2, policy_disc], dim=-1))
         return policy, next_state
 
 

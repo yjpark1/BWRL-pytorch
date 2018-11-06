@@ -39,7 +39,7 @@ class StarCraftEnvironment(object):
         # restart flag
         self.flag_restart = 0
         self.prev_flag_restart = False
-        self.dummy_action = [[0, 0, 0]] * self.nb_agents
+        self.dummy_action = [[0, 0, 0, 0, 0]] * self.nb_agents
 
         # defalut health
         self.default_health_ally = 80 * len(self.env_details['ally'])
@@ -142,17 +142,22 @@ class StarCraftEnvironment(object):
 
     def _make_action_bwapi(self, action):
         # split action
-        action_cont = action[:, :, 0:2]
-        action_desc = action[:, :, 2:]
+        action_cont1 = action[:, :, 0:2]
+        action_cont2 = action[:, :, 2:4]
+        action_desc = action[:, :, 4:]
 
         action_bwapi = []
         # for each agent
-        for a_xy, a_type in zip(action_cont.squeeze(), action_desc.squeeze()):
-            a_x = int(a_xy[0] * 128)
-            a_y = int(a_xy[1] * 128)
+        for a_xy1, a_xy2, a_type in zip(action_cont1.squeeze(), action_cont2.squeeze(), action_desc.squeeze()):
+            a_x_1 = int(a_xy1[0] * 128)
+            a_y_1 = int(a_xy1[1] * 128)
+
+            a_x_2 = int(a_xy2[0] * 128)
+            a_y_2 = int(a_xy2[1] * 128)
+
             # [x, y, nothing/attack/move]
             a_type = int(np.argmax(a_type))
-            a = [a_x, a_y, a_type]
+            a = [a_x_1, a_y_1, a_x_2, a_y_2, a_type]
             action_bwapi.append(a)
         return action_bwapi
 
@@ -345,11 +350,10 @@ class StarCraftEnvironment(object):
         r1 = num_enemy_on_range * 0.2 + num_ally_under_dange_range * -0.4
 
         # 2. change ratio hp ( -0.8 * 0~1 + 0.2 * 0~1 => -0.8 ~ 0.2)   * 20  => -16 ~ 4
-        r2 = (-8 * delta_ally + 2 * delta_enemy) * 20
-
+        r2 = (-5 * delta_ally + 4 * delta_enemy) * 20
 
         # 3. dead unit handling  (-0.4 *2 + 0.6 * 3) = (-0.8 ~ 1.8) = -24 ~ 54
-        r3 = (+0.6 * delta_num_dead_ally - 0.4 * delta_num_dead_enemy) * 30
+        r3 = (-0.6 * delta_num_dead_ally + 0.4 * delta_num_dead_enemy) * 30
         # if r3 > 0:
         #     print('delta_num_dead_ally : {}, delta_num_dead_enemy : {}'.format(delta_num_dead_ally, delta_num_dead_enemy))
 
@@ -379,10 +383,11 @@ class StarCraftEnvironment(object):
         # 7. Once allies attack same unit at one time, the more it decrease hp of the the enemy, the more it get reward!
         r5 = sum([math.pow(2, int(item / 10)) if item < 10 else 0 for item in delta_hp_enemy_each_unnormalized]) / 10
 
-        reward = r1 + r2 + r3 + r4 + r5 - p1 - p2
-
-        if self.check_threshold(r1=r1, r2=r2, r3=r3, r4=r4, r5=r5, p1=p1, p2=p2):
-            print('r1 : {}, r2 : {}, r3 : {}, r4 : {}, r5 : {}, p1 : {}, p2 : {}'.format(r1, r2, r3, r4, r5, p1, p2))
+        # reward = r1 + r2 + r3 + r4 + r5 - p1 - p2
+        reward = r1 + r2 + r3 - p2
+        reward = 0
+        # if self.check_threshold(r1=r1, r2=r2, r3=r3, r4=r4, r5=r5, p1=p1, p2=p2):
+            # print('r1 : {}, r2 : {}, r3 : {}, r4 : {}, r5 : {}, p1 : {}, p2 : {}'.format(r1, r2, r3, r4, r5, p1, p2))
 
         # update hp previous
         self.prev_health_ally = currentHealth_ally
