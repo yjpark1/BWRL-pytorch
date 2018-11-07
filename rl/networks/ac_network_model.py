@@ -108,7 +108,7 @@ class ActorNetwork(nn.Module):
         policy_cont = torch.tanh(policy_cont)
         policy_disc = self.dense2_disc(hid)
 
-        policy_disc = gaussian(ins=policy_disc, is_training=1-self.training, mean=0, stddev=0.2)
+        # policy_disc = gaussian(ins=policy_disc, is_training=1-self.training, mean=0, stddev=0.2)
 
         policy_disc = nn.Softmax(dim=-1)(policy_disc)
         policy = torch.cat([policy_cont, policy_disc], dim=-1)

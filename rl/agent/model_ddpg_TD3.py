@@ -82,8 +82,10 @@ class Trainer:
         return done
 
     def to_onehot(self, actions):
-        actions = np.argmax(actions, axis=-1)
-        actions = to_categorical(actions, num_classes=3)
+        # actions = np.argmax(actions, axis=-1)
+        actions = np.array([np.random.choice(2, replace=False, p=x) for x in actions[0]])
+        actions = np.expand_dims(actions, axis=0)
+        actions = to_categorical(actions, num_classes=2)
         actions = actions.astype('float32')
         return actions
 
@@ -93,8 +95,6 @@ class Trainer:
         :param state: state (Numpy array)
         :return: sampled action (Numpy array)
         """
-        # add random noise to exploration
-        self.actor.eval()
         # state = np.expand_dims(state, axis=0)
         state = state.to(self.device)
         actions, _ = self.actor.forward(state)
@@ -126,9 +126,6 @@ class Trainer:
         r = r.to(self.device)
         s1 = s1.to(self.device)
         d = d.to(self.device)
-
-        # run random noise to exploration
-        self.actor.train()
 
         # ---------------------- optimize critic ----------------------
         # Use target actor exploitation policy here for loss evaluation
@@ -171,7 +168,7 @@ class Trainer:
         pred_a0, pred_s1 = self.actor.forward(s0)
 
         # Loss: entropy for exploration
-        # entropy = torch.sum(pred_a0[:, :, 2:] * torch.log(pred_a0[:, :, 2:]), dim=-1).mean()
+        entropy = torch.sum(pred_a0[:, :, 2:] * torch.log(pred_a0[:, :, 2:]), dim=-1).mean()
 
         # Loss: regularization
         l2_reg = torch.cuda.FloatTensor(1)
@@ -187,7 +184,7 @@ class Trainer:
 
         # Sum. Loss
         loss_actor = actor_maxQ
-        # loss_actor += entropy * 0.05  # <replace Gaussian noise>
+        loss_actor += entropy * 0.05  # <replace Gaussian noise>
         loss_actor += torch.squeeze(l2_reg) * 0.001
         loss_actor += actor_ModelLoss
 
