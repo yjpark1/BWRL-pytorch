@@ -3,6 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+def gaussian(ins, is_training, mean, stddev):
+    if is_training:
+        noise = ins.data.new(ins.size()).normal_(mean, stddev)
+        return ins + noise
+    return ins
+
+
 class TimeDistributed(nn.Module):
     def __init__(self, module):
         super(TimeDistributed, self).__init__()
@@ -100,6 +107,9 @@ class ActorNetwork(nn.Module):
         policy_cont = self.dense2_cont(hid)
         policy_cont = torch.tanh(policy_cont)
         policy_disc = self.dense2_disc(hid)
+
+        policy_disc = gaussian(ins=policy_disc, is_training=1-self.training, mean=0, stddev=0.2)
+
         policy_disc = nn.Softmax(dim=-1)(policy_disc)
         policy = torch.cat([policy_cont, policy_disc], dim=-1)
         next_state = self.dense3(hid)

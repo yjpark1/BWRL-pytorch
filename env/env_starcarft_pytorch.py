@@ -312,7 +312,18 @@ class StarCraftEnvironment(object):
 
         # num units dead
         num_dead_ally = self.num_ally - len(token_unit_ally)
+<<<<<<< HEAD
         delta_num_dead_ally = self.prev_num_dead_ally - num_dead_ally
+=======
+        num_dead_enemy = self.num_enemy - len(token_unit_enemy)
+
+        num_enemy_on_range = 0
+        for a in pos_ally:
+            for b in pos_enemy:
+                d = self._dist(a, b)
+                if 32 < d <= self.attack_range_of_ally:
+                    num_enemy_on_range += 1
+>>>>>>> 40e0b5032979bc6516077f3a642ea779c217ba0f
 
         # attacking_status_of_vulture & status of vulture under attack
         is_moving = sum(token_unit_ally[:, 9])
@@ -320,6 +331,11 @@ class StarCraftEnvironment(object):
 
         reward = 0
 
+<<<<<<< HEAD
+=======
+        # 2. change ratio hp
+        reward += (-0.4 * delta_ally + 0.6 * delta_enemy)
+>>>>>>> 40e0b5032979bc6516077f3a642ea779c217ba0f
 
         # 1. get sum of minimum distance among each agent and all enemies
         min_distance = 999999999
