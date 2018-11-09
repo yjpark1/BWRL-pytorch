@@ -301,24 +301,15 @@ class StarCraftEnvironment(object):
         # get health
         currentHealth_ally, currentHealth_enemy = self._get_Health(self.token_unit)
 
-        current_hp_enemy_each = enemy[:, 1] + enemy[:, 2]
-
-        # reward by health change
-        delta_hp_enemy_each_unnormalized = self.prev_hp_enemy_each - current_hp_enemy_each
-
         delta_ally = self.prev_health_ally - currentHealth_ally
-        delta_enemy = self.prev_health_enemy - currentHealth_enemy
 
         # scaling delta
         delta_ally = delta_ally / self.default_health_ally
-        delta_enemy = delta_enemy / self.default_health_enemy
 
         # units count alive
         hp_ally = token_unit_ally[:, 1] + token_unit_ally[:, 2]
-        hp_enemy = token_unit_enemy[:, 1] + token_unit_enemy[:, 2]
 
         token_unit_ally = token_unit_ally[hp_ally > 0].reshape((-1, 11))
-        token_unit_enemy = token_unit_enemy[hp_enemy > 0].reshape((-1, 11))
 
         # (x, y)
         pos_ally = token_unit_ally[:, 4:6]
@@ -326,77 +317,56 @@ class StarCraftEnvironment(object):
 
         # num units dead
         num_dead_ally = self.num_ally - len(token_unit_ally)
-        num_dead_enemy = self.num_enemy - len(token_unit_enemy)
 
         delta_num_dead_ally = self.prev_num_dead_ally - num_dead_ally
-        delta_num_dead_enemy = self.prev_num_dead_enemy - num_dead_enemy
-
-        num_enemy_on_range = 0
-        num_ally_under_dange_range = 0
-        for a in pos_ally:
-            for b in pos_enemy:
-                cnt = 1 if self._dist(a, b) > self.min_attack_range_of_ally and self._dist(a, b) < self.max_attack_range_of_ally else 0
-                num_enemy_on_range += cnt
-
-                penalty_cnt = 1 if self._dist(a, b) < self.min_attack_range_of_ally else 0
-                num_ally_under_dange_range += penalty_cnt
 
         # attacking_status_of_vulture & status of vulture under attack
-        is_attack = sum(token_unit_ally[:, 8])
+        is_moving = sum(token_unit_ally[:, 9])
         is_underattack = sum(token_unit_ally[:, 10])
 
         reward = 0
-        # 1. n count agent in range ( 0 ~ 6 )
-        r1 = num_enemy_on_range * 0.2 + num_ally_under_dange_range * -0.4
 
-        # 2. change ratio hp ( -0.8 * 0~1 + 0.2 * 0~1 => -0.8 ~ 0.2)   * 20  => -16 ~ 4
-        r2 = (-5 * delta_ally + 4 * delta_enemy) * 20
+        # 1. get sum of minimum distance among each agent and all enemies
+        min_distance = 999999999
+        r1 = 0
 
-        # 3. dead unit handling  (-0.4 *2 + 0.6 * 3) = (-0.8 ~ 1.8) = -24 ~ 54
-        r3 = (-0.6 * delta_num_dead_ally + 0.4 * delta_num_dead_enemy) * 30
-        # if r3 > 0:
-        #     print('delta_num_dead_ally : {}, delta_num_dead_enemy : {}'.format(delta_num_dead_ally, delta_num_dead_enemy))
-
-        # 4. isAttacking and underAttack handling ( -2 ~ 2 )
-        r4 = (is_attack - is_underattack) / 2
-
-        # 5. sum of distance between ally units  ( 0~ 2896) 2896.309375740099 -> d between (0,0), (2048,2048) --> 0 ~ 10
-        distance_between_allies = 0
-        for i, a in enumerate(pos_ally):
-            for j, b in enumerate(pos_ally):
-                if i != j:
-                    distance_between_allies += self._dist(a, b)
-
-        p1 = (distance_between_allies / 2896) * 5
-
-        # 6. the more positions of allies close center of map. the more those get rewards.
-        # It is for agents not to go edge part and then get stuck from enemies
-        # d between (0,0), (1024,1024) -> 1448.1546878700494   --> 0 ~ 10
-        d_agent_and_center = []
         for a in pos_ally:
-            d_agent_and_center.append(sum((a - np.asarray([1024, 1024])) ** 2) ** 0.5)
-
-        d_agent_and_center = np.asarray(d_agent_and_center)
-        p2 = (np.mean(d_agent_and_center) / 1448) * 0.1
-        if num_dead_ally != 0:
-            p2 = 0
-        # 7. Once allies attack same unit at one time, the more it decrease hp of the the enemy, the more it get reward!
-        r5 = sum([math.pow(2, int(item / 10)) if item < 10 else 0 for item in delta_hp_enemy_each_unnormalized]) / 10
-
-        # reward = r1 + r2 + r3 + r4 + r5 - p1 - p2
-        reward = r1 + r2 + r3 - p2
-        reward = 0
-        # if self.check_threshold(r1=r1, r2=r2, r3=r3, r4=r4, r5=r5, p1=p1, p2=p2):
-            # print('r1 : {}, r2 : {}, r3 : {}, r4 : {}, r5 : {}, p1 : {}, p2 : {}'.format(r1, r2, r3, r4, r5, p1, p2))
+            for b in pos_enemy:
+                if min_distance > self._dist(a, b):
+                    min_distance = self._dist(a, b)
+            r1 += min_distance / 2896.309375740099
+            """
+            import  numpy  as np
+            a = np.asarray([0,0])
+            b = np.asarray([2048,2048])
+            (b-a)**2 
+            Out[5]: array([4194304, 4194304], dtype=int32)
+            sum(_)
+            Out[6]: 8388608
+            _ ** 0.5
+            Out[7]: 2896.309375740099
+            """
+        # 2. give penalty if agent is in edge zone (edge zone size = margin)
+        margin = 32 * 3
+        p1 = 0
+        for a in pos_ally:
+            if a[0] < margin or ((64 * 32 - margin) < a[0] and a[0] < 64 * 32):
+                p1 += 1
+            elif a[1] < margin or ((64 * 32 - margin) < a[1] and a[1] < 64 * 32):
+                p1 += 1
+        # 3. if a agent is under attack, it get penalty.
+        p2 = is_underattack / self.num_ally
+        # 4. if sum of agent hp and shield decreases, it get penalty also.
+        p3 = delta_ally * 2
 
         # update hp previous
         self.prev_health_ally = currentHealth_ally
         self.prev_health_enemy = currentHealth_enemy
 
         self.prev_num_dead_ally = num_dead_ally
-        self.prev_num_dead_enemy = num_dead_enemy
 
-        self.prev_hp_enemy_each = current_hp_enemy_each
+        reward = r1 - p1 - p2 - p3
+        # print('r1 : {}, p1 : {}, p2 : {}, p3 : {}'.format(r1, p1, p2, p3))
 
         # ## for debug
         self.R += reward
