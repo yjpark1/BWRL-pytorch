@@ -383,9 +383,11 @@ class StarCraftEnvironment(object):
         # 7. Once allies attack same unit at one time, the more it decrease hp of the the enemy, the more it get reward!
         r5 = sum([math.pow(2, int(item / 10)) if item < 10 else 0 for item in delta_hp_enemy_each_unnormalized]) / 10
 
-        # reward = r1 + r2 + r3 + r4 + r5 - p1 - p2
-        reward = r1 + r2 + r3 - p2
-        reward = 0
+        # 8. reward change
+        r6 = sum(token_unit_ally[:, 3]) / 60  # vulture cooldown 0 ~ 30 * num_ally_units
+
+        reward = r1 + r2 + r3 + r5 + r6 - p1 - p2
+        # reward = r2 + r3
         # if self.check_threshold(r1=r1, r2=r2, r3=r3, r4=r4, r5=r5, p1=p1, p2=p2):
             # print('r1 : {}, r2 : {}, r3 : {}, r4 : {}, r5 : {}, p1 : {}, p2 : {}'.format(r1, r2, r3, r4, r5, p1, p2))
 
