@@ -82,7 +82,6 @@ class Trainer:
         return done
 
     def to_onehot(self, actions):
-        actions = np.argmax(actions, axis=-1)
         actions = to_categorical(actions, num_classes=3)
         actions = actions.astype('float32')
         return actions
@@ -97,12 +96,12 @@ class Trainer:
         self.actor.eval()
         # state = np.expand_dims(state, axis=0)
         state = state.to(self.device)
-        actions, _ = self.actor.forward(state)
+        actions, _, discrete_actions = self.actor.forward(state)
         actions = actions.data.cpu().numpy()
         # OU process: (-1, 1) scale
         actions[:, :, 0:2] = actions[:, :, 0:2] + self.noise.noise()
         actions[:, :, 2:4] = actions[:, :, 2:4] + self.noise.noise()
-        actions[:, :, 4:] = self.to_onehot(actions[:, :, 4:])
+        actions[:, :, 4:] = self.to_onehot(discrete_actions)
         return actions
 
     def process_batch(self, experiences):
@@ -133,7 +132,7 @@ class Trainer:
 
         # ---------------------- optimize critic ----------------------
         # Use target actor exploitation policy here for loss evaluation
-        a1, _ = self.target_actor.forward(s1)
+        a1, _, _ = self.target_actor.forward(s1)
         a1 = a1.detach()
 
         # target critic (1)
@@ -169,7 +168,7 @@ class Trainer:
         self.critic_optimizer.step()
 
         # ---------------------- optimize actor ----------------------
-        pred_a0, pred_s1 = self.actor.forward(s0)
+        pred_a0, pred_s1, _ = self.actor.forward(s0)
 
         # Loss: entropy for exploration
         # entropy = torch.sum(pred_a0[:, :, 2:] * torch.log(pred_a0[:, :, 2:]), dim=-1).mean()

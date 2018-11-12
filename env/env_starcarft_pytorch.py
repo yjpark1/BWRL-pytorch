@@ -356,6 +356,7 @@ class StarCraftEnvironment(object):
                 p1 += 1
         # 3. if a agent is under attack, it get penalty.
         p2 = is_underattack / self.num_ally
+
         # 4. if sum of agent hp and shield decreases, it get penalty also.
         p3 = delta_ally * 2
 
@@ -365,7 +366,10 @@ class StarCraftEnvironment(object):
 
         self.prev_num_dead_ally = num_dead_ally
 
-        reward = r1 - p1 - p2 - p3
+        # 9. isMoving could be one of rewards
+        r7 = sum(token_unit_ally[:, 9])
+
+        reward = r1 - p1 - p2 - p3 + r7
         # print('r1 : {}, p1 : {}, p2 : {}, p3 : {}'.format(r1, p1, p2, p3))
 
         # ## for debug
