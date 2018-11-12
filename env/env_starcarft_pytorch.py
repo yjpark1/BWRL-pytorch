@@ -349,16 +349,14 @@ class StarCraftEnvironment(object):
         # 1. n count agent in range ( 0 ~ 6 )
         r1 = num_enemy_on_range * 0.2 + num_ally_under_dange_range * -0.4
 
-        # 2. change ratio hp ( -0.8 * 0~1 + 0.2 * 0~1 => -0.8 ~ 0.2)   * 20  => -16 ~ 4
-        r2 = (-5 * delta_ally + 4 * delta_enemy) * 20
+        # 2. change ratio hp ( -0.5 * 0~1 + 0.2 * 0~1 => -0.5 ~ 0.2)   * 20  => -10 ~ 4
+        r2 = (-5 * delta_ally + 4 * delta_enemy) * 10
 
         # 3. dead unit handling  (-0.4 *2 + 0.6 * 3) = (-0.8 ~ 1.8) = -24 ~ 54
-        r3 = (-0.6 * delta_num_dead_ally + 0.4 * delta_num_dead_enemy) * 30
-        # if r3 > 0:
-        #     print('delta_num_dead_ally : {}, delta_num_dead_enemy : {}'.format(delta_num_dead_ally, delta_num_dead_enemy))
+        r3 = (+0.6 * delta_num_dead_ally - 0.4 * delta_num_dead_enemy) * 20
 
         # 4. isAttacking and underAttack handling ( -2 ~ 2 )
-        r4 = (is_attack - is_underattack) / 2
+        # r4 = (is_attack - is_underattack) / 2
 
         # 5. sum of distance between ally units  ( 0~ 2896) 2896.309375740099 -> d between (0,0), (2048,2048) --> 0 ~ 10
         distance_between_allies = 0
@@ -376,20 +374,40 @@ class StarCraftEnvironment(object):
         for a in pos_ally:
             d_agent_and_center.append(sum((a - np.asarray([1024, 1024])) ** 2) ** 0.5)
 
-        d_agent_and_center = np.asarray(d_agent_and_center)
-        p2 = (np.mean(d_agent_and_center) / 1448) * 0.1
-        if num_dead_ally != 0:
-            p2 = 0
+        # d_agent_and_center = np.asarray(d_agent_and_center)
+        # p2 = (np.mean(d_agent_and_center) / 1448) * 0.1
+        # if num_dead_ally != 0:
+        #     p2 = 0
+
         # 7. Once allies attack same unit at one time, the more it decrease hp of the the enemy, the more it get reward!
         r5 = sum([math.pow(2, int(item / 10)) if item < 10 else 0 for item in delta_hp_enemy_each_unnormalized]) / 10
 
         # 8. reward change
         r6 = sum(token_unit_ally[:, 3]) / 60  # vulture cooldown 0 ~ 30 * num_ally_units
 
-        reward = r1 + r2 + r3 + r5 + r6 - p1 - p2
+        # 9. give penalty if agent is in edge zone (edge zone size = margin)
+        margin = 32 * 3
+
+        p3 = 0
+        for a in pos_ally:
+            if a[0] < margin or ((64 * 32 - margin) < a[0] and a[0] < 64 * 32):
+                p3 += 1
+            elif a[1] < margin or ((64 * 32 - margin) < a[1] and a[1] < 64 * 32):
+                p3 += 1
+        p3 = p3 / 2
+
+        # 9. isMoving could be one of rewards
+        r7 = sum(token_unit_ally[:, 9]) / 2
+
+
+        reward = r2 + r3 + r6 + r7 - p3
+
         # reward = r2 + r3
-        # if self.check_threshold(r1=r1, r2=r2, r3=r3, r4=r4, r5=r5, p1=p1, p2=p2):
-            # print('r1 : {}, r2 : {}, r3 : {}, r4 : {}, r5 : {}, p1 : {}, p2 : {}'.format(r1, r2, r3, r4, r5, p1, p2))
+        if self.check_threshold(r1=r1, r2=r2, r3=r3, r5=r5, r6=r6, r7=r7, p1=p1, p3=p3):
+            print('r1 : {}, r2 : {}, r3 : {}, r5 : {}, r6 : {}, r7 : {}, p1 : {}, p3 : {}'.format(r1, r2, r3, r5, r6, r7, p1, p3))
+
+            if r3 == 18:
+                print('wtf')
 
         # update hp previous
         self.prev_health_ally = currentHealth_ally
