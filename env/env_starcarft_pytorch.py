@@ -49,7 +49,7 @@ class StarCraftEnvironment(object):
         self.nb_episode = 0
 
         # scenario information
-        self.min_attack_range_of_ally = 1.5 * 32  # margin 0.5 + zealot attack range 1
+        self.min_attack_range_of_ally = 2.5 * 32  # margin 0.5 + zealot attack range 1
         self.max_attack_range_of_ally = 5 * 32
 
         # log = open('results/train_step_log.txt', 'w')
@@ -346,8 +346,8 @@ class StarCraftEnvironment(object):
         is_underattack = sum(token_unit_ally[:, 10])
 
         reward = 0
-        # 1. n count agent in range ( 0 ~ 6 )
-        r1 = num_enemy_on_range * 0.2 + num_ally_under_dange_range * -0.4
+        # 1. n count agent in range ( 6 * 0.7 - 6 * 0.8 ) -.2.8 ~ 2.8
+        r1 = (num_enemy_on_range / 6) * 0.7 + (num_ally_under_dange_range / 6) * -0.8
 
         # 2. change ratio hp ( -0.5 * 0~1 + 0.2 * 0~1 => -0.5 ~ 0.2)   * 20  => -10 ~ 4
         r2 = (-5 * delta_ally + 4 * delta_enemy) * 10
@@ -370,9 +370,9 @@ class StarCraftEnvironment(object):
         # 6. the more positions of allies close center of map. the more those get rewards.
         # It is for agents not to go edge part and then get stuck from enemies
         # d between (0,0), (1024,1024) -> 1448.1546878700494   --> 0 ~ 10
-        d_agent_and_center = []
-        for a in pos_ally:
-            d_agent_and_center.append(sum((a - np.asarray([1024, 1024])) ** 2) ** 0.5)
+        # d_agent_and_center = []
+        # for a in pos_ally:
+        #     d_agent_and_center.append(sum((a - np.asarray([1024, 1024])) ** 2) ** 0.5)
 
         # d_agent_and_center = np.asarray(d_agent_and_center)
         # p2 = (np.mean(d_agent_and_center) / 1448) * 0.1
@@ -382,11 +382,11 @@ class StarCraftEnvironment(object):
         # 7. Once allies attack same unit at one time, the more it decrease hp of the the enemy, the more it get reward!
         r5 = sum([math.pow(2, int(item / 10)) if item < 10 else 0 for item in delta_hp_enemy_each_unnormalized]) / 10
 
-        # 8. reward change
-        r6 = sum(token_unit_ally[:, 3]) / 60  # vulture cooldown 0 ~ 30 * num_ally_units
+        # 8. cooldown is under 4, it means this unit attack enemies. give additional reward
+        r6 = sum([1 if c < 4 else 0 for c in token_unit_ally[:, 3]]) / 2  # vulture cooldown 0 ~ 30 * num_ally_units
 
         # 9. give penalty if agent is in edge zone (edge zone size = margin)
-        margin = 32 * 3
+        margin = 32 * 8
 
         p3 = 0
         for a in pos_ally:
@@ -399,15 +399,13 @@ class StarCraftEnvironment(object):
         # 9. isMoving could be one of rewards
         r7 = sum(token_unit_ally[:, 9]) / 2
 
-
-        reward = r2 + r3 + r6 + r7 - p3
+        # reward = r2 + r3 + r6 + r7 - p3
+        reward = r1 + r6 * 0.5 + r3 - p3 * 0.3
 
         # reward = r2 + r3
-        if self.check_threshold(r1=r1, r2=r2, r3=r3, r5=r5, r6=r6, r7=r7, p1=p1, p3=p3):
-            print('r1 : {}, r2 : {}, r3 : {}, r5 : {}, r6 : {}, r7 : {}, p1 : {}, p3 : {}'.format(r1, r2, r3, r5, r6, r7, p1, p3))
-
-            if r3 == 18:
-                print('wtf')
+        # if self.check_threshold(r1=r1, r2=r2, r3=r3, r5=r5, r6=r6, r7=r7, p1=p1, p3=p3):
+            # print('r1 : {}, r2 : {}, r3 : {}, r5 : {}, r6 : {}, r7 : {}, p1 : {}, p3 : {}'.format(r1, r2, r3, r5, r6, r7, p1, p3))
+        print('r1 : {}, r3 : {}, r6 : {}, p3 : {}'.format(r1, r3, r6, p3))
 
         # update hp previous
         self.prev_health_ally = currentHealth_ally
