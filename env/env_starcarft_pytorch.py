@@ -380,7 +380,7 @@ class StarCraftEnvironment(object):
         #     p2 = 0
 
         # 7. Once allies attack same unit at one time, the more it decrease hp of the the enemy, the more it get reward!
-        r5 = sum([math.pow(2, int(item / 10)) if item < 10 else 0 for item in delta_hp_enemy_each_unnormalized]) / 10
+        r5 = sum([math.pow(2, int(item / 10)) if item > 10 else 0 for item in delta_hp_enemy_each_unnormalized]) / 10
 
         # 8. cooldown is under 4, it means this unit attack enemies. give additional reward
         r6 = sum([1 if c < 4 else 0 for c in token_unit_ally[:, 3]]) / 2  # vulture cooldown 0 ~ 30 * num_ally_units
