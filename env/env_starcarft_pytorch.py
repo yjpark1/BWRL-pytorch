@@ -44,7 +44,7 @@ class StarCraftEnvironment(object):
         self.nb_episode = 0
 
         # scenario information
-        self.attack_range_of_ally = 5 * 32
+        self.attack_range_of_ally = 5
 
         # log = open('results/train_step_log.txt', 'w')
         # log.write('train start... \n')
@@ -221,7 +221,7 @@ class StarCraftEnvironment(object):
         out = np.array([unit1, unit2, ..., unitN])
         unitN = (2D np.arrray, 1D np.array)
         '''
-        token_unit[:, 4:6] = token_unit[:, 4:6] / (64*8)  # ?? scale
+        token_unit[:, 4:6] = token_unit[:, 4:6] / 128.  # ?? scale
         token_unit = np.delete(token_unit, [6, 7], axis=1)
 
         token_unit_ally = token_unit[token_unit[:, 0] == 0]
@@ -307,12 +307,16 @@ class StarCraftEnvironment(object):
         num_dead_ally = self.num_ally - len(token_unit_ally)
         num_dead_enemy = self.num_enemy - len(token_unit_enemy)
 
-        num_enemy_on_range = 0
+        # num_enemy_on_range = 0
+        range_reward = 0
         for a in pos_ally:
             for b in pos_enemy:
                 d = self._dist(a, b)
-                if 64 < d <= self.attack_range_of_ally:
+                '''
+                if 2 < d <= self.attack_range_of_ally:
                     num_enemy_on_range += 1
+                '''
+                range_reward += -0.1 * ((d - 5) ** 2) + 1
 
         # attacking_status_of_vulture & status of vulture under attack
         is_attack = sum(token_unit_ally[:, 8])
@@ -320,16 +324,17 @@ class StarCraftEnvironment(object):
 
         reward = 0
         # 1. n count agent in range (0, 12)
-        reward += num_enemy_on_range / 4.
+        # reward += num_enemy_on_range / 4.
+        reward += range_reward / 4.
 
         # 2. isAttacking and underAttack handling (-4, 4)
-        reward += (is_attack - is_underattack) / 2.
+        # reward += (is_attack - is_underattack) / 2.
 
         # 3. change ratio hp (-1, 1)
         reward += (-0.4 * delta_ally + 0.6 * delta_enemy)
 
         # 4. dead unit handling (-4, 3)
-        reward += (-0.4 * num_dead_ally + 0.6 * num_dead_enemy) /4.
+        reward += (-0.4 * num_dead_ally + 0.6 * num_dead_enemy) / 4.
 
         # update hp previous
         self.prev_health_ally = currentHealth_ally
