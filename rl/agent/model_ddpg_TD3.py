@@ -98,11 +98,22 @@ class Trainer:
         # state = np.expand_dims(state, axis=0)
         state = state.to(self.device)
         actions, _ = self.actor.forward(state)
+        actions = actions.detach()
         actions = actions.data.cpu().numpy()
         # OU process: (-1, 1) scale
         actions[:, :, 0:2] = actions[:, :, 0:2] + self.noise.noise()
         actions[:, :, 2:] = self.to_onehot(actions[:, :, 2:])
+        # masking dead units
+        actions = self._maskingActions(state, actions)
+
         return actions
+
+    def _maskingActions(self, state, actions):
+        idx = state[:, :, 1] == 0
+        actions[:, idx, :] = 0
+
+        return actions
+
 
     def process_batch(self, experiences):
         s0 = torch.cat([e.state0[0] for e in experiences], dim=0)
@@ -131,6 +142,8 @@ class Trainer:
         # Use target actor exploitation policy here for loss evaluation
         a1, _ = self.target_actor.forward(s1)
         a1 = a1.detach()
+        # masking dead units
+        a1 = self._maskingActions(s1, a1)
 
         # target critic (1)
         q_next1, _ = self.target_critic1.forward(s1, a1)
@@ -166,6 +179,8 @@ class Trainer:
 
         # ---------------------- optimize actor ----------------------
         pred_a0, pred_s1 = self.actor.forward(s0)
+        # masking dead units
+        pred_a0 = self._maskingActions(s0, pred_a0)
 
         # Loss: entropy for exploration
         entropy = torch.sum(pred_a0[:, :, 2:] * torch.log(pred_a0[:, :, 2:]), dim=-1).mean()
@@ -181,6 +196,7 @@ class Trainer:
 
         # Loss: env loss
         actor_ModelLoss = torch.nn.L1Loss()(pred_s1, s1)
+        # TODO: discard dead units?
 
         # Sum. Loss
         loss_actor = actor_maxQ
