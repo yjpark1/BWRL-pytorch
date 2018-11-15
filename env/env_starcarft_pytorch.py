@@ -300,8 +300,8 @@ class StarCraftEnvironment(object):
         token_unit_enemy = token_unit_enemy[hp_enemy > 0].reshape((-1, 11))
 
         # (x, y)
-        pos_ally = token_unit_ally[:, 4:6]
-        pos_enemy = token_unit_enemy[:, 4:6]
+        pos_ally = token_unit_ally[:, 4:6] / 32
+        pos_enemy = token_unit_enemy[:, 4:6] / 32
 
         # num units dead
         num_dead_ally = self.num_ally - len(token_unit_ally)
@@ -316,7 +316,7 @@ class StarCraftEnvironment(object):
                 if 2 < d <= self.attack_range_of_ally:
                     num_enemy_on_range += 1
                 '''
-                range_reward += -0.1 * ((d - 5) ** 2) + 1
+                range_reward += -0.1 * abs(d - 5) + 1
 
         # attacking_status_of_vulture & status of vulture under attack
         is_attack = sum(token_unit_ally[:, 8])
@@ -325,16 +325,16 @@ class StarCraftEnvironment(object):
         reward = 0
         # 1. n count agent in range (0, 12)
         # reward += num_enemy_on_range / 4.
-        reward += range_reward / 4.
+        reward += range_reward
 
         # 2. isAttacking and underAttack handling (-4, 4)
         # reward += (is_attack - is_underattack) / 2.
 
         # 3. change ratio hp (-1, 1)
-        reward += (-0.4 * delta_ally + 0.6 * delta_enemy)
+        reward += (-0.4 * delta_ally + 0.6 * delta_enemy) * 2
 
         # 4. dead unit handling (-4, 3)
-        reward += (-0.4 * num_dead_ally + 0.6 * num_dead_enemy) / 4.
+        reward += (-0.4 * num_dead_ally + 0.6 * num_dead_enemy)
 
         # update hp previous
         self.prev_health_ally = currentHealth_ally

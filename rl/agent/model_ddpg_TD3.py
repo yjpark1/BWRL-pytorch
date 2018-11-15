@@ -109,9 +109,15 @@ class Trainer:
         return actions
 
     def _maskingActions(self, state, actions):
-        idx = state[:, :, 1] == 0
-        actions[:, idx, :] = 0
-
+        mask = state[:, :, 1] == 0
+        if type(actions).__module__ == 'torch':
+            actions[mask] = 0
+        elif type(actions).__module__ == 'numpy':
+            mask = mask.data.cpu().numpy()
+            mask = mask == 1
+            actions[mask] = 0
+        else:
+            print('Not supported type!')
         return actions
 
 
