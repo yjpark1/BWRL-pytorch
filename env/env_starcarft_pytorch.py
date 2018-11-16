@@ -84,6 +84,11 @@ class StarCraftEnvironment(object):
         done = self._get_done()
         info = dict()
 
+        if done:
+            hp_ally, hp_enemy = self._get_Health(self.token_unit)
+            if (hp_ally > 0) & (hp_enemy == 0):
+                reward += 100
+
         # save step log
         # hp_a, hp_e = self._get_Health(self.token_unit)
         # msg = "episode: {}, step: {}, reward: {}, done: {}, allyHP: {}, enemyHP: {}".format(
@@ -127,6 +132,9 @@ class StarCraftEnvironment(object):
         self.prev_health_ally = 80 * len(self.env_details['ally'])
         self.prev_health_enemy = 160 * len(self.env_details['enemy'])
 
+        # remember unit id
+        self.unit_id = self.token_unit[:, [0, 7]]
+
         return initial_state
 
     def _make_action_bwapi(self, action):
@@ -136,12 +144,17 @@ class StarCraftEnvironment(object):
 
         action_bwapi = []
         # for each agent
+        print('actions')
         for a_xy, a_type in zip(action_cont.squeeze(), action_desc.squeeze()):
             a_x = int(a_xy[0] * 128)
             a_y = int(a_xy[1] * 128)
             # [x, y, nothing/attack/move]
-            a_type = int(np.argmax(a_type))
+            if a_type[0] == a_type[1]:
+                a_type = int(2)
+            else:
+                a_type = int(np.argmax(a_type))
             a = [a_x, a_y, a_type]
+            print(a)
             action_bwapi.append(a)
         return action_bwapi
 
@@ -188,27 +201,23 @@ class StarCraftEnvironment(object):
             token_unit = np.zeros(shape=(self.num_ally + self.num_enemy, 11))
             token_unit[:self.num_ally, 0] = 0  # assign ally
             token_unit[self.num_ally:, 0] = 1  # assign enemy
+            return token_unit
 
-        # when units are dead
-        # current units
-        numAlly = sum(token_unit[:, 0] == 0)
-        numEnemy = sum(token_unit[:, 0] == 1)
+        elif len(token_unit) == (self.num_ally + self.num_enemy):
+            return token_unit
 
-        # dead units
-        numDeadAlly = self.num_ally - numAlly
-        numDeadEnemy = self.num_enemy - numEnemy
+        else:
+            # when units are dead
+            # current units
+            token_unit_empty = np.zeros(shape=(self.num_ally + self.num_enemy, 11))
+            token_unit_empty[:, [0, 7]] = self.unit_id
 
-        # calibration
-        if numDeadAlly > 0:
-            add = np.zeros((numDeadAlly, 11))
-            token_unit = np.vstack([token_unit, add])
+            for token_unit_single in token_unit:
+                idx = token_unit_single[7]
+                token_unit_empty[token_unit_empty[:, 7] == idx] = token_unit_single
 
-        if numDeadEnemy > 0:
-            add = np.zeros((numDeadEnemy, 11))
-            add[:, 0] = 1
-            token_unit = np.vstack([token_unit, add])
-
-        return token_unit
+            token_unit = token_unit_empty
+            return token_unit
 
     def _make_observation(self, token_unit):
         '''
@@ -307,24 +316,28 @@ class StarCraftEnvironment(object):
         num_dead_ally = self.num_ally - len(token_unit_ally)
         num_dead_enemy = self.num_enemy - len(token_unit_enemy)
 
-        # num_enemy_on_range = 0
-        range_reward = 0
+        # pairwise distance
+        Ds = []
         for a in pos_ally:
             for b in pos_enemy:
-                d = self._dist(a, b)
-                '''
-                if 2 < d <= self.attack_range_of_ally:
-                    num_enemy_on_range += 1
-                '''
-                range_reward += -0.1 * abs(d - 5) + 1
+                d = self._dist(a, b)  # tile position scale
+                Ds.append(d)
+
+        # calc. reward by min dis. (-5, 0)
+        range_reward = 0
+        if len(Ds) != 0:
+            d = min(Ds)
+            if d <= 5:
+                range_reward += -abs(d - 5)
+            elif d > 5:
+                range_reward += -(5 / 128) * abs(d - 5)
 
         # attacking_status_of_vulture & status of vulture under attack
-        is_attack = sum(token_unit_ally[:, 8])
-        is_underattack = sum(token_unit_ally[:, 10])
+        # is_attack = sum(token_unit_ally[:, 8])
+        # is_underattack = sum(token_unit_ally[:, 10])
 
         reward = 0
-        # 1. n count agent in range (0, 12)
-        # reward += num_enemy_on_range / 4.
+        # 1. reward by minimum distance
         reward += range_reward
 
         # 2. isAttacking and underAttack handling (-4, 4)

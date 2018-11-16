@@ -89,7 +89,7 @@ class ActorNetwork(nn.Module):
         self.nb_agents = nb_agents
         self.dense1 = nn.Linear(input_dim, 64)
         # return sequence is not exist in pytorch. Instead, output will return with first dimension for sequences.
-        self.bilstm = nn.LSTM(64, 32, num_layers=1, bidirectional=True)
+        self.bilstm = nn.LSTM(64, 32, num_layers=1, bidirectional=True, batch_first=True)
         self.dense2_cont = nn.Linear(64, out_dim[0])
         self.dense2_disc = nn.Linear(64, out_dim[1])
         self.dense3 = nn.Linear(64, input_dim)
@@ -134,7 +134,7 @@ class CriticNetwork(nn.Module):
         self.nb_agents = nb_agents
         self.dense1 = nn.Linear(input_dim, 64)
         # return sequence is not exist in pytorch. Instead, output will return with first dimension for sequences.
-        self.lstm = nn.LSTM(64, 64, num_layers=1, bidirectional=False)
+        self.lstm = nn.LSTM(64, 64, num_layers=1, bidirectional=False, batch_first=True)
         self.dense2 = nn.Linear(64, out_dim)
         self.dense3 = nn.Linear(64, out_dim)
 
