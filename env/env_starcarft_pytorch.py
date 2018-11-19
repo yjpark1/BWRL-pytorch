@@ -349,6 +349,8 @@ class StarCraftEnvironment(object):
         # 1. n count agent in range ( 6 * 0.7 - 6 * 0.8 ) -.2.8 ~ 2.8
         r1 = (num_enemy_on_range / 6) * 0.7 + (num_ally_under_dange_range / 6) * -0.8
 
+        r1_1 = (num_ally_under_dange_range / 6)
+
         # 2. change ratio hp ( -0.5 * 0~1 + 0.2 * 0~1 => -0.5 ~ 0.2)   * 20  => -10 ~ 4
         r2 = (-5 * delta_ally + 4 * delta_enemy) * 10
 
@@ -400,12 +402,12 @@ class StarCraftEnvironment(object):
         r7 = sum(token_unit_ally[:, 9]) / 2
 
         # reward = r2 + r3 + r6 + r7 - p3
-        reward = r1 + r6 * 0.5 + r3 - p3 * 0.3
+        reward = r1_1 * -3 - p3 * 4
 
         # reward = r2 + r3
         # if self.check_threshold(r1=r1, r2=r2, r3=r3, r5=r5, r6=r6, r7=r7, p1=p1, p3=p3):
             # print('r1 : {}, r2 : {}, r3 : {}, r5 : {}, r6 : {}, r7 : {}, p1 : {}, p3 : {}'.format(r1, r2, r3, r5, r6, r7, p1, p3))
-        print('r1 : {}, r3 : {}, r6 : {}, p3 : {}'.format(r1, r3, r6, p3))
+        #print('r1 : {}, r3 : {}, r6 : {}, p3 : {}'.format(r1, r3, r6, p3))
 
         # update hp previous
         self.prev_health_ally = currentHealth_ally

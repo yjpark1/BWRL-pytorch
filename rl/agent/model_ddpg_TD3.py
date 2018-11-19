@@ -178,9 +178,15 @@ class Trainer:
         for W in self.actor.parameters():
             l2_reg = l2_reg + W.norm(2)
 
+        for b in range(arglist.batch_size):
+            for a in range(2):
+                if s0[b,a,1] == 0:
+                    pred_a0[b,a,:] = torch.zeros(7)
+
         # Loss: max. Q
         Q, _ = self.critic.forward(s0, pred_a0)
         actor_maxQ = -1 * Q.mean()
+
 
         # Loss: env loss
         actor_ModelLoss = torch.nn.L1Loss()(pred_s1, s1)
