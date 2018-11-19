@@ -144,7 +144,8 @@ class StarCraftEnvironment(object):
 
         action_bwapi = []
         # for each agent
-        print('actions')
+        # print('actions')
+        # print(self.unit_id[self.unit_id[:, 0] == 0, 1])
         for a_xy, a_type in zip(action_cont.squeeze(), action_desc.squeeze()):
             a_x = int(a_xy[0] * 128)
             a_y = int(a_xy[1] * 128)
@@ -153,9 +154,12 @@ class StarCraftEnvironment(object):
                 a_type = int(2)
             else:
                 a_type = int(np.argmax(a_type))
-            a = [a_x, a_y, a_type]
-            print(a)
-            action_bwapi.append(a)
+
+            if a_type != 2:
+                a = [a_x, a_y, a_type]
+                # print(a)
+                action_bwapi.append(a)
+
         return action_bwapi
 
     def _make_action_token(self, action_bwapi):

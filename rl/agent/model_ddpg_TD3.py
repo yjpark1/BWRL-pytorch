@@ -31,6 +31,10 @@ class Trainer:
         self.target_critic2 = copy.deepcopy(critic).to(self.device)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), arglist.learning_rate)
 
+        # set train flag
+        self.actor.train()
+        self.critic.train()
+
         self.target_actor.eval()
         self.target_critic1.eval()
         self.target_critic2.eval()
@@ -247,7 +251,7 @@ class Trainer:
         torch.save(self.target_critic2.state_dict(), 'critic2.pt')
         print('Models saved successfully')
 
-    def load_models(self, episode):
+    def load_models(self):
         """
         loads the target actor and critic models, and copies them onto actor and critic models
         :param episode: the count of episodes iterated (used to find the file name)
