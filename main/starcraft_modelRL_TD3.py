@@ -9,6 +9,9 @@ from rl.replay_buffer import SequentialMemory
 from rl import arglist
 from rl.utils import OUNoise
 from copy import deepcopy
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = '1'
+
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 ou_xy = OUNoise(action_dimension=2, theta=0.15, sigma=0.2)
@@ -18,6 +21,7 @@ def rl_learn(cnt=0):
     torch.cuda.empty_cache()
     # load scenario from script
     scenario_name = 'TV2vsPZ3'
+
     env_details = {'ally': ['verture']*2,
                    'enemy': ['zealot']*3,
                    'state_dim': (2, 36)}
@@ -26,6 +30,7 @@ def rl_learn(cnt=0):
 
     actor = ActorNetwork(nb_agents=env.nb_agents, input_dim=36, out_dim=[2, 3])
     critic = CriticNetwork(nb_agents=env.nb_agents, input_dim=36 + 7, out_dim=1)
+
     memory = SequentialMemory(limit=1000000)
     agent = Trainer(actor, critic, memory, noise=ou_xy)
 

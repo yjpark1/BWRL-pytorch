@@ -11,6 +11,13 @@ def gaussian(ins, is_training, mean, stddev):
     return ins
 
 
+def gaussian(ins, is_training, mean, stddev):
+    if is_training:
+        noise = ins.data.new(ins.size()).normal_(mean, stddev)
+        return ins + noise
+    return ins
+
+
 class TimeDistributed(nn.Module):
     def __init__(self, module):
         super(TimeDistributed, self).__init__()
@@ -90,6 +97,7 @@ class ActorNetwork(nn.Module):
         self.nb_agents = nb_agents
         self.dense1 = nn.Linear(input_dim, 64)
         # return sequence is not exist in pytorch. Instead, output will return with first dimension for sequences.
+
         self.bilstm = nn.LSTM(64, 32, num_layers=1, bidirectional=True)
         self.dense2_cont_1 = nn.Linear(67, out_dim[0])
         self.dense2_cont_2 = nn.Linear(67, out_dim[0])
@@ -109,7 +117,8 @@ class ActorNetwork(nn.Module):
 
         policy_disc = self.dense2_disc(hid)
 
-        policy_disc = gaussian(ins=policy_disc, is_training=self.training, mean=0, stddev=0.2)
+        # 181119 : it changed not to be used when it pulled from master 181119!!
+        # policy_disc = gaussian(ins=policy_disc, is_training=self.training, mean=0, stddev=0.2)
         policy_disc = nn.Softmax(dim=-1)(policy_disc)
 
         actions = policy_disc.data.cpu().numpy()
@@ -155,7 +164,7 @@ class CriticNetwork(nn.Module):
         self.nb_agents = nb_agents
         self.dense1 = nn.Linear(input_dim, 64)
         # return sequence is not exist in pytorch. Instead, output will return with first dimension for sequences.
-        self.lstm = nn.LSTM(64, 64, num_layers=1, bidirectional=False)
+        self.lstm = nn.LSTM(64, 64, num_layers=1, bidirectional=False, batch_first=True)
         self.dense2 = nn.Linear(64, out_dim)
         self.dense3 = nn.Linear(64, out_dim)
 
