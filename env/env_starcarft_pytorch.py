@@ -149,14 +149,16 @@ class StarCraftEnvironment(object):
         return initial_state
 
     def _make_action_bwapi(self, action):
+
         # split action
         action_cont1 = action[:, :, 0:2]
         action_cont2 = action[:, :, 2:4]
         action_desc = action[:, :, 4:]
 
         action_bwapi = []
+
         # for each agent
-        for a_xy1, a_xy2, a_type in zip(action_cont1.squeeze(), action_cont2.squeeze(), action_desc.squeeze()):
+        for a_xy1, a_xy2, a_type in zip(action_cont1.squeeze(axis=0), action_cont2.squeeze(axis=0), action_desc.squeeze(axis=0)):
             a_x_1 = int(a_xy1[0] * 128)
             a_y_1 = int(a_xy1[1] * 128)
 
@@ -410,7 +412,8 @@ class StarCraftEnvironment(object):
         r7 = sum(token_unit_ally[:, 9]) / 2
 
         # reward = r2 + r3 + r6 + r7 - p3
-        reward = r1_1 * -3 - p3 * 4
+        # reward = r1_1 * -3 - p3 * 4
+        reward = r2 + r3 + r6 * 4 - p3 * 4 + r7
 
         # reward = r2 + r3
         # if self.check_threshold(r1=r1, r2=r2, r3=r3, r5=r5, r6=r6, r7=r7, p1=p1, p3=p3):

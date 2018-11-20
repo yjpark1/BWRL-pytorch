@@ -10,7 +10,7 @@ from rl import arglist
 from rl.utils import OUNoise
 from copy import deepcopy
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = '1'
+# os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
@@ -65,7 +65,23 @@ def rl_learn(cnt=0):
     while True:
         # get action
         obs = agent.process_obs(obs)
+        mask = (obs[:, :, 1] != 0).data.numpy().squeeze()
         actions = agent.get_exploration_action(obs)
+
+        tmp_actions = []
+        j = 0
+
+        if np.sum(mask) != env.nb_agents:
+            for i in mask:
+                if i == 0:
+                    action = np.zeros(7).astype(np.float32)
+                else:
+                    action = actions.squeeze()[j]
+                    j+=1
+                tmp_actions.append(action)
+            actions = tmp_actions
+            actions = np.expand_dims(actions, axis=0)
+
 
         # environment step
         while True:

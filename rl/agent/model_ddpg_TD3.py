@@ -92,7 +92,6 @@ class Trainer:
         :param state: state (Numpy array)
         :return: sampled action (Numpy array)
         """
-
         # add random noise to exploration
         self.actor.eval()
         # state = np.expand_dims(state, axis=0)
@@ -197,7 +196,7 @@ class Trainer:
         pred_a0 = self._maskingActions(s0, pred_a0)
 
         # Loss: entropy for exploration
-        entropy = torch.sum(pred_a0[:, :, 2:] * torch.log(pred_a0[:, :, 2:]), dim=-1)
+        entropy = torch.sum(pred_a0[:, :, 4:] * torch.log(pred_a0[:, :, 4:]), dim=-1)
         entropy[torch.isnan(entropy)] = 0
         entropy = entropy.mean()
 
@@ -218,7 +217,6 @@ class Trainer:
 
         # Sum. Loss
         loss_actor = actor_maxQ
-
         loss_actor += entropy * 0.05  # <replace Gaussian noise>
         loss_actor += torch.squeeze(l2_reg) * 0.001
         loss_actor += actor_ModelLoss * 0.1
