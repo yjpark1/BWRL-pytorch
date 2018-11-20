@@ -132,6 +132,9 @@ class StarCraftEnvironment(object):
         self.prev_health_ally = 80 * len(self.env_details['ally'])
         self.prev_health_enemy = 160 * len(self.env_details['enemy'])
 
+        self.prev_num_ally = len(self.env_details['ally'])
+        self.prev_num_enemy = len(self.env_details['enemy'])
+
         # remember unit id
         self.unit_id = self.token_unit[:, [0, 7]]
 
@@ -147,8 +150,8 @@ class StarCraftEnvironment(object):
         # print('actions')
         # print(self.unit_id[self.unit_id[:, 0] == 0, 1])
         for a_xy, a_type in zip(action_cont.squeeze(), action_desc.squeeze()):
-            a_x = int(a_xy[0] * 128)
-            a_y = int(a_xy[1] * 128)
+            a_x = int(a_xy[0] * 64)
+            a_y = int(a_xy[1] * 64)
             # [x, y, nothing/attack/move]
             if a_type[0] == a_type[1]:
                 a_type = int(2)
@@ -317,9 +320,9 @@ class StarCraftEnvironment(object):
         pos_enemy = token_unit_enemy[:, 4:6] / 32
 
         # num units dead
-        num_dead_ally = self.num_ally - len(token_unit_ally)
-        num_dead_enemy = self.num_enemy - len(token_unit_enemy)
-
+        num_dead_ally = self.prev_num_ally - len(token_unit_ally)
+        num_dead_enemy = self.prev_num_enemy - len(token_unit_enemy)
+        '''
         # pairwise distance
         Ds = []
         for a in pos_ally:
@@ -335,14 +338,14 @@ class StarCraftEnvironment(object):
                 range_reward += -abs(d - 5)
             elif d > 5:
                 range_reward += -(5 / 128) * abs(d - 5)
-
+        '''
         # attacking_status_of_vulture & status of vulture under attack
         # is_attack = sum(token_unit_ally[:, 8])
         # is_underattack = sum(token_unit_ally[:, 10])
 
         reward = 0
         # 1. reward by minimum distance
-        reward += range_reward
+        # reward += range_reward
 
         # 2. isAttacking and underAttack handling (-4, 4)
         # reward += (is_attack - is_underattack) / 2.
@@ -356,6 +359,9 @@ class StarCraftEnvironment(object):
         # update hp previous
         self.prev_health_ally = currentHealth_ally
         self.prev_health_enemy = currentHealth_enemy
+
+        self.prev_num_ally = len(token_unit_ally)
+        self.prev_num_enemy = len(token_unit_enemy)
 
         # ## for debug
         self.R += reward
