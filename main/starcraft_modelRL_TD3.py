@@ -14,7 +14,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = '1'
 
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
-ou_xy = OUNoise(action_dimension=2, theta=0.15, sigma=0.2)
+ou_xy = OUNoise(action_dimension=(4, 2), theta=0., sigma=0.01)
 
 
 def rl_learn(cnt=0):
@@ -155,6 +155,8 @@ def rl_learn(cnt=0):
                     round(monitor_loss[5], 3))
                 msg = msg1 + ', ' + msg2
                 print(msg)
+
+                agent.save_models()
 
                 # save log
                 # log = open('results/train_log.txt', 'a')

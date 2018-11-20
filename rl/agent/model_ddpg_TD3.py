@@ -39,6 +39,7 @@ class Trainer:
         self.target_critic1.eval()
         self.target_critic2.eval()
         self.n_updates = 0
+        self.eps = 1
 
         self.noise = noise
 
@@ -105,10 +106,13 @@ class Trainer:
         actions = actions.detach()
         actions = actions.data.cpu().numpy()
         # OU process: (-1, 1) scale
-        actions[:, :, 0:2] = actions[:, :, 0:2] + self.noise.noise()
+        actions[:, :, 0:2] = actions[:, :, 0:2] + self.eps * self.noise.noise()
+        actions[:, :, 0:2] = np.clip(actions[:, :, 0:2], a_min=-1, a_max=1)
+
         actions[:, :, 2:] = self.to_onehot(actions[:, :, 2:])
         # masking dead units
         actions = self._maskingActions(state, actions)
+        self.eps *= 0.99999
 
         return actions
 

@@ -99,6 +99,10 @@ class OUNoise:
 
     def noise(self):
         x = self.state
-        dx = self.theta * (self.mu - x) + self.sigma * nr.randn(len(x))
+        dx = self.theta * (self.mu - x) + self.sigma * nr.randn(x.shape[0], x.shape[1])
         self.state = x + dx
         return self.state
+
+if __name__ == '__main__':
+    ou_xy = OUNoise(action_dimension=2, theta=0., sigma=0.05)
+    ou_xy.noise()

@@ -322,7 +322,7 @@ class StarCraftEnvironment(object):
         # num units dead
         num_dead_ally = self.prev_num_ally - len(token_unit_ally)
         num_dead_enemy = self.prev_num_enemy - len(token_unit_enemy)
-        '''
+
         # pairwise distance
         Ds = []
         for a in pos_ally:
@@ -338,14 +338,14 @@ class StarCraftEnvironment(object):
                 range_reward += -abs(d - 5)
             elif d > 5:
                 range_reward += -(5 / 128) * abs(d - 5)
-        '''
+
         # attacking_status_of_vulture & status of vulture under attack
         # is_attack = sum(token_unit_ally[:, 8])
         # is_underattack = sum(token_unit_ally[:, 10])
 
         reward = 0
         # 1. reward by minimum distance
-        # reward += range_reward
+        reward += range_reward
 
         # 2. isAttacking and underAttack handling (-4, 4)
         # reward += (is_attack - is_underattack) / 2.
