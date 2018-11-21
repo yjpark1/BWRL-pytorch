@@ -24,12 +24,12 @@ class Trainer:
         self.iter = 0
         self.actor = actor.to(self.device)
         self.target_actor = copy.deepcopy(actor).to(self.device)
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), arglist.learning_rate)
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), arglist.actor_learning_rate)
 
         self.critic = critic.to(self.device)
         self.target_critic1 = copy.deepcopy(critic).to(self.device)
         self.target_critic2 = copy.deepcopy(critic).to(self.device)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), arglist.learning_rate)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), arglist.critic_learning_rate)
 
         self.target_actor.eval()
         self.target_critic1.eval()
@@ -205,8 +205,6 @@ class Trainer:
         for W in self.actor.parameters():
             l2_reg = l2_reg + W.norm(2)
 
-
-        if s0[:]
         # Loss: max. Q
         Q, _ = self.critic.forward(s0, pred_a0)
         actor_maxQ = -1 * Q.mean()

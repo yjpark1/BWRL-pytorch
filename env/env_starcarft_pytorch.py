@@ -413,6 +413,7 @@ class StarCraftEnvironment(object):
 
         # reward = r2 + r3 + r6 + r7 - p3
         # reward = r1_1 * -3 - p3 * 4
+        # reward = r2 + r3 + r6 * 4 - p3 * 4 + r7
         reward = r2 + r3 + r6 * 4 - p3 * 4 + r7
 
         # reward = r2 + r3
