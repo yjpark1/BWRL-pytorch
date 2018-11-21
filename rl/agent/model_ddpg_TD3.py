@@ -10,7 +10,7 @@ from util.CustomLog import cLogger
 
 logger = cLogger.getLogger()
 GAMMA = 0.99
-TAU = 0.001
+
 
 
 class Trainer:

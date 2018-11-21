@@ -49,8 +49,8 @@ class StarCraftEnvironment(object):
         self.nb_episode = 0
 
         # scenario information
-        self.min_attack_range_of_ally = 2.5 * 32  # margin 0.5 + zealot attack range 1
-        self.max_attack_range_of_ally = 5 * 32
+        self.min_attack_range_of_ally = 2.5   # margin 0.5 + zealot attack range 1
+        self.max_attack_range_of_ally = 5
 
         # log = open('results/train_step_log.txt', 'w')
         # log.write('train start... \n')
@@ -398,13 +398,13 @@ class StarCraftEnvironment(object):
         r6 = sum([1 if c < 4 else 0 for c in token_unit_ally[:, 3]]) / 2  # vulture cooldown 0 ~ 30 * num_ally_units
 
         # 9. give penalty if agent is in edge zone (edge zone size = margin)
-        margin = 32 * 8
+        margin = 4
 
         p3 = 0
         for a in pos_ally:
-            if a[0] < margin or ((64 * 32 - margin) < a[0] and a[0] < 64 * 32):
+            if a[0] < margin or ((64  - margin) < a[0] and a[0] < 64 ):
                 p3 += 1
-            elif a[1] < margin or ((64 * 32 - margin) < a[1] and a[1] < 64 * 32):
+            if a[1] < margin or ((64  - margin) < a[1] and a[1] < 64):
                 p3 += 1
         p3 = p3 / 2
 
@@ -414,12 +414,13 @@ class StarCraftEnvironment(object):
         # reward = r2 + r3 + r6 + r7 - p3
         # reward = r1_1 * -3 - p3 * 4
         # reward = r2 + r3 + r6 * 4 - p3 * 4 + r7
-        reward = r2 + r3 + r6 * 4 - p3 * 4 + r7
+        # reward = r2 + r3 + r6 * 4 - p3 * 4 + r7
+        reward = r1_1 * -3 - p3 * 5
 
         # reward = r2 + r3
         # if self.check_threshold(r1=r1, r2=r2, r3=r3, r5=r5, r6=r6, r7=r7, p1=p1, p3=p3):
             # print('r1 : {}, r2 : {}, r3 : {}, r5 : {}, r6 : {}, r7 : {}, p1 : {}, p3 : {}'.format(r1, r2, r3, r5, r6, r7, p1, p3))
-        #print('r1 : {}, r3 : {}, r6 : {}, p3 : {}'.format(r1, r3, r6, p3))
+        print('r1_1 : {}, p3 : {}'.format(r1_1, p3))
 
         # update hp previous
         self.prev_health_ally = currentHealth_ally
