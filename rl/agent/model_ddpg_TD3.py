@@ -102,17 +102,17 @@ class Trainer:
         """
         # state = np.expand_dims(state, axis=0)
         state = state.to(self.device)
-        actions, _ = self.actor.forward(state)
+        actions, _ = self.actor.forward(state, noise_inject=arglist.is_training)
         actions = actions.detach()
         actions = actions.data.cpu().numpy()
         # OU process: (-1, 1) scale
-        actions[:, :, 0:2] = actions[:, :, 0:2] + self.eps * self.noise.noise()
+        # actions[:, :, 0:2] = actions[:, :, 0:2] + self.eps * self.noise.noise()
         actions[:, :, 0:2] = np.clip(actions[:, :, 0:2], a_min=-1, a_max=1)
 
         actions[:, :, 2:] = self.to_onehot(actions[:, :, 2:])
         # masking dead units
         actions = self._maskingActions(state, actions)
-        self.eps *= 0.99999
+        # self.eps *= 0.99999
 
         return actions
 
@@ -157,6 +157,7 @@ class Trainer:
         s1 = s1.to(self.device)
         d = d.to(self.device)
 
+        self.actor.train()
         # ---------------------- optimize critic ----------------------
         # Use target actor exploitation policy here for loss evaluation
         a1, _ = self.target_actor.forward(s1)

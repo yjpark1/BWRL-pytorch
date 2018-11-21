@@ -1,10 +1,10 @@
-from env.env_starcarft_pytorch import StarCraftEnvironment
-from rl.networks.ac_network_model import ActorNetwork, CriticNetwork
-from rl.agent.model_ddpg_TD3 import Trainer
 from main import GlobalVariable as gvar
 import numpy as np
 import torch
 import time
+from env.env_starcarft_pytorch import StarCraftEnvironment
+from rl.networks.ac_network_model import ActorNetwork, CriticNetwork
+from rl.agent.model_ddpg_TD3 import Trainer
 from rl.replay_buffer import SequentialMemory
 from rl import arglist
 from rl.utils import OUNoise
@@ -31,6 +31,9 @@ def rl_learn(cnt=0):
     critic = CriticNetwork(nb_agents=env.nb_agents, input_dim=36 + 4, out_dim=1)
     memory = SequentialMemory(limit=1000000)
     agent = Trainer(actor, critic, memory, noise=ou_xy)
+
+    if not arglist.is_training:
+        agent.load_models()
 
     # initialize history
     episode_rewards = [0.0]  # sum of rewards for all agents
@@ -129,7 +132,7 @@ def rl_learn(cnt=0):
 
         # update all trainers, if not in display or benchmark mode
         loss = [np.nan, np.nan]
-        if (train_step > arglist.warmup_steps) and (train_step % 200 == 0):
+        if (train_step > arglist.warmup_steps) and (train_step % 100 == 0) and arglist.is_training:
             # optimize actor-critic
             loss = agent.optimize()
             loss = np.array([x.data.item() for x in loss])

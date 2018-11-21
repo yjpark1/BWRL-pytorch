@@ -7,3 +7,4 @@ warmup_steps = 1000
 save_rate = 100
 batch_size = 128
 exp_name = 'model_'
+is_training = True

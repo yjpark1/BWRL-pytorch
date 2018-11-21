@@ -94,7 +94,7 @@ class ActorNetwork(nn.Module):
         self.dense2_disc = nn.Linear(64, out_dim[1])
         self.dense3 = nn.Linear(64, input_dim)
 
-    def forward(self, obs):
+    def forward(self, obs, noise_inject=False):
         """
         Inputs:
             X (PyTorch Matrix): Batch of observations
@@ -105,11 +105,10 @@ class ActorNetwork(nn.Module):
         hid, _ = self.bilstm(hid, None)
         hid = F.relu(hid)
         policy_cont = self.dense2_cont(hid)
+        policy_cont = gaussian(ins=policy_cont, is_training=noise_inject, mean=0, stddev=0.2)
         policy_cont = torch.tanh(policy_cont)
+
         policy_disc = self.dense2_disc(hid)
-
-        # policy_disc = gaussian(ins=policy_disc, is_training=1-self.training, mean=0, stddev=0.2)
-
         policy_disc = nn.Softmax(dim=-1)(policy_disc)
         policy = torch.cat([policy_cont, policy_disc], dim=-1)
         next_state = self.dense3(hid)
