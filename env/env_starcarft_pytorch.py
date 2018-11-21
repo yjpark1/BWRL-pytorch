@@ -85,9 +85,8 @@ class StarCraftEnvironment(object):
         info = dict()
 
         if done:
-            hp_ally, hp_enemy = self._get_Health(self.token_unit)
-            if (hp_ally > 0) & (hp_enemy == 0):
-                reward += 100
+            self.nb_episode += 1
+            # np.save('results/hist/' + str(self.nb_episode) + '_reward.npy', self.R)
 
         # save step log
         # hp_a, hp_e = self._get_Health(self.token_unit)
@@ -127,7 +126,7 @@ class StarCraftEnvironment(object):
         """
         self.nb_step = 0
         initial_state = self._process_token()
-        self.R = 0
+        self.R = []
 
         self.prev_health_ally = 80 * len(self.env_details['ally'])
         self.prev_health_enemy = 160 * len(self.env_details['enemy'])
@@ -357,10 +356,10 @@ class StarCraftEnvironment(object):
 
         # 4. dead unit handling (-4, 3)
         # reward += (-0.4 * num_dead_ally + 0.6 * num_dead_enemy)
-        reward += - num_dead_ally
+        # reward += - num_dead_ally
 
         # 5. control penalty
-        reward += -reward_contol / 4
+        # reward += -reward_contol / 4
 
         # update hp previous
         self.prev_health_ally = currentHealth_ally
@@ -370,7 +369,7 @@ class StarCraftEnvironment(object):
         self.prev_num_enemy = len(token_unit_enemy)
 
         # ## for debug
-        self.R += reward
+        self.R.append(reward)
         #
         # self.hist.append(np.array([self.nb_step, self.prev_health_ally, currentHealth_ally,
         #                            self.prev_health_enemy, currentHealth_enemy, reward, self.R]))
@@ -401,6 +400,9 @@ class StarCraftEnvironment(object):
             done = True
 
         if self.flag_restart == 1:
+            done = True
+
+        elif self.flag_restart == 2:
             done = True
 
         # update prev_health_ally

@@ -9,7 +9,7 @@ from rl.utils import to_categorical
 from util.CustomLog import cLogger
 
 logger = cLogger.getLogger()
-GAMMA = 0.95
+GAMMA = 0.8
 TAU = 0.001
 
 
