@@ -9,7 +9,7 @@ from rl.utils import to_categorical
 from util.CustomLog import cLogger
 
 logger = cLogger.getLogger()
-GAMMA = 0.95
+GAMMA = 0.99
 TAU = 0.001
 
 
@@ -130,7 +130,7 @@ class Trainer:
         # run random noise to exploration
         self.actor.train()
 
-        # ---------------------- optimize critic ----------------------
+        # ---------------------- optimize critic ---------------------
         # Use target actor exploitation policy here for loss evaluation
         a1, _, _ = self.target_actor.forward(s1)
         a1 = a1.detach()
@@ -178,6 +178,8 @@ class Trainer:
         for W in self.actor.parameters():
             l2_reg = l2_reg + W.norm(2)
 
+
+        if s0[:]
         # Loss: max. Q
         Q, _ = self.critic.forward(s0, pred_a0)
         actor_maxQ = -1 * Q.mean()

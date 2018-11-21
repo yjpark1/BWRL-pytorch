@@ -149,11 +149,11 @@ class StarCraftEnvironment(object):
         action_bwapi = []
         # for each agent
         for a_xy1, a_xy2, a_type in zip(action_cont1.squeeze(), action_cont2.squeeze(), action_desc.squeeze()):
-            a_x_1 = int(a_xy1[0] * 128)
-            a_y_1 = int(a_xy1[1] * 128)
+            a_x_1 = int(a_xy1[0] * 64)
+            a_y_1 = int(a_xy1[1] * 64)
 
-            a_x_2 = int(a_xy2[0] * 128)
-            a_y_2 = int(a_xy2[1] * 128)
+            a_x_2 = int(a_xy2[0] * 64)
+            a_y_2 = int(a_xy2[1] * 64)
 
             # [x, y, nothing/attack/move]
             a_type = int(np.argmax(a_type))
