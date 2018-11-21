@@ -90,6 +90,11 @@ class StarCraftEnvironment(object):
         done = self._get_done()
         info = dict()
 
+        if done:
+            hp_ally, hp_enemy = self._get_Health(self.token_unit)
+            if (hp_ally > 0) & (hp_enemy == 0):
+                reward += 100
+
         # save step log
         # hp_a, hp_e = self._get_Health(self.token_unit)
         # msg = "episode: {}, step: {}, reward: {}, done: {}, allyHP: {}, enemyHP: {}".format(
@@ -130,8 +135,11 @@ class StarCraftEnvironment(object):
         initial_state = self._process_token()
         self.R = 0
 
-        self.prev_health_ally = 80 * 2
-        self.prev_health_enemy = 160 * 3
+        self.prev_health_ally = 80 * len(self.env_details['ally'])
+        self.prev_health_enemy = 160 * len(self.env_details['enemy'])
+
+        # remember unit id
+        self.unit_id = self.token_unit[:, [0, 7]]
 
         self.prev_num_dead_ally = 0
         self.prev_num_dead_enemy = 0
@@ -141,14 +149,16 @@ class StarCraftEnvironment(object):
         return initial_state
 
     def _make_action_bwapi(self, action):
+
         # split action
         action_cont1 = action[:, :, 0:2]
         action_cont2 = action[:, :, 2:4]
         action_desc = action[:, :, 4:]
 
         action_bwapi = []
+
         # for each agent
-        for a_xy1, a_xy2, a_type in zip(action_cont1.squeeze(), action_cont2.squeeze(), action_desc.squeeze()):
+        for a_xy1, a_xy2, a_type in zip(action_cont1.squeeze(axis=0), action_cont2.squeeze(axis=0), action_desc.squeeze(axis=0)):
             a_x_1 = int(a_xy1[0] * 64)
             a_y_1 = int(a_xy1[1] * 64)
 
@@ -158,6 +168,7 @@ class StarCraftEnvironment(object):
             # [x, y, nothing/attack/move]
             a_type = int(np.argmax(a_type))
             a = [a_x_1, a_y_1, a_x_2, a_y_2, a_type]
+
             action_bwapi.append(a)
         return action_bwapi
 
@@ -204,27 +215,23 @@ class StarCraftEnvironment(object):
             token_unit = np.zeros(shape=(self.num_ally + self.num_enemy, 11))
             token_unit[:self.num_ally, 0] = 0  # assign ally
             token_unit[self.num_ally:, 0] = 1  # assign enemy
+            return token_unit
 
-        # when units are dead
-        # current units
-        numAlly = sum(token_unit[:, 0] == 0)
-        numEnemy = sum(token_unit[:, 0] == 1)
+        elif len(token_unit) == (self.num_ally + self.num_enemy):
+            return token_unit
 
-        # dead units
-        numDeadAlly = self.num_ally - numAlly
-        numDeadEnemy = self.num_enemy - numEnemy
+        else:
+            # when units are dead
+            # current units
+            token_unit_empty = np.zeros(shape=(self.num_ally + self.num_enemy, 11))
+            token_unit_empty[:, [0, 7]] = self.unit_id
 
-        # calibration
-        if numDeadAlly > 0:
-            add = np.zeros((numDeadAlly, 11))
-            token_unit = np.vstack([token_unit, add])
+            for token_unit_single in token_unit:
+                idx = token_unit_single[7]
+                token_unit_empty[token_unit_empty[:, 7] == idx] = token_unit_single
 
-        if numDeadEnemy > 0:
-            add = np.zeros((numDeadEnemy, 11))
-            add[:, 0] = 1
-            token_unit = np.vstack([token_unit, add])
-
-        return token_unit
+            token_unit = token_unit_empty
+            return token_unit
 
     def _make_observation(self, token_unit):
         '''
@@ -237,7 +244,7 @@ class StarCraftEnvironment(object):
         out = np.array([unit1, unit2, ..., unitN])
         unitN = (2D np.arrray, 1D np.array)
         '''
-        token_unit[:, 4:6] = token_unit[:, 4:6] / (64*8)  # ?? scale
+        token_unit[:, 4:6] = token_unit[:, 4:6] / 128.  # ?? scale
         token_unit = np.delete(token_unit, [6, 7], axis=1)
 
         token_unit_ally = token_unit[token_unit[:, 0] == 0]
@@ -321,12 +328,13 @@ class StarCraftEnvironment(object):
         token_unit_enemy = token_unit_enemy[hp_enemy > 0].reshape((-1, 11))
 
         # (x, y)
-        pos_ally = token_unit_ally[:, 4:6]
-        pos_enemy = token_unit_enemy[:, 4:6]
+        pos_ally = token_unit_ally[:, 4:6] / 32
+        pos_enemy = token_unit_enemy[:, 4:6] / 32
 
         # num units dead
         num_dead_ally = self.num_ally - len(token_unit_ally)
         num_dead_enemy = self.num_enemy - len(token_unit_enemy)
+
 
         delta_num_dead_ally = self.prev_num_dead_ally - num_dead_ally
         delta_num_dead_enemy = self.prev_num_dead_enemy - num_dead_enemy
@@ -342,12 +350,16 @@ class StarCraftEnvironment(object):
                 num_ally_under_dange_range += penalty_cnt
 
         # attacking_status_of_vulture & status of vulture under attack
-        is_attack = sum(token_unit_ally[:, 8])
-        is_underattack = sum(token_unit_ally[:, 10])
+        # is_attack = sum(token_unit_ally[:, 8])
+        # is_underattack = sum(token_unit_ally[:, 10])
 
         reward = 0
+
+
         # 1. n count agent in range ( 6 * 0.7 - 6 * 0.8 ) -.2.8 ~ 2.8
         r1 = (num_enemy_on_range / 6) * 0.7 + (num_ally_under_dange_range / 6) * -0.8
+
+        r1_1 = (num_ally_under_dange_range / 6)
 
         # 2. change ratio hp ( -0.5 * 0~1 + 0.2 * 0~1 => -0.5 ~ 0.2)   * 20  => -10 ~ 4
         r2 = (-5 * delta_ally + 4 * delta_enemy) * 10
@@ -400,12 +412,13 @@ class StarCraftEnvironment(object):
         r7 = sum(token_unit_ally[:, 9]) / 2
 
         # reward = r2 + r3 + r6 + r7 - p3
-        reward = r1 + r6 * 0.5 + r3 - p3 * 0.3
+        # reward = r1_1 * -3 - p3 * 4
+        reward = r2 + r3 + r6 * 4 - p3 * 4 + r7
 
         # reward = r2 + r3
         # if self.check_threshold(r1=r1, r2=r2, r3=r3, r5=r5, r6=r6, r7=r7, p1=p1, p3=p3):
             # print('r1 : {}, r2 : {}, r3 : {}, r5 : {}, r6 : {}, r7 : {}, p1 : {}, p3 : {}'.format(r1, r2, r3, r5, r6, r7, p1, p3))
-        print('r1 : {}, r3 : {}, r6 : {}, p3 : {}'.format(r1, r3, r6, p3))
+        #print('r1 : {}, r3 : {}, r6 : {}, p3 : {}'.format(r1, r3, r6, p3))
 
         # update hp previous
         self.prev_health_ally = currentHealth_ally

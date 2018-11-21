@@ -102,7 +102,28 @@ class Trainer:
         actions[:, :, 0:2] = actions[:, :, 0:2] + self.noise.noise()
         actions[:, :, 2:4] = actions[:, :, 2:4] + self.noise.noise()
         actions[:, :, 4:] = self.to_onehot(discrete_actions)
+
+        # masking dead units
+        actions = self._maskingActions(state, actions)
+
         return actions
+
+    def _maskingActions(self, state, actions):
+        mask = state[:, :, 1] == 0
+        if type(actions).__module__ == 'torch':
+            actions[mask] = 0
+        elif type(actions).__module__ == 'numpy':
+            mask = mask.data.cpu().numpy()
+            mask = mask == 1
+            actions[mask] = 0
+        else:
+            print('Not supported type!')
+        return actions
+
+    def _maskingPredState(self, state0, state1):
+        mask = state0[:, :, 1] == 0
+        state1[mask] = 0
+        return state1
 
     def process_batch(self, experiences):
         s0 = torch.cat([e.state0[0] for e in experiences], dim=0)
@@ -127,13 +148,14 @@ class Trainer:
         s1 = s1.to(self.device)
         d = d.to(self.device)
 
-        # run random noise to exploration
         self.actor.train()
 
         # ---------------------- optimize critic ---------------------
         # Use target actor exploitation policy here for loss evaluation
         a1, _, _ = self.target_actor.forward(s1)
         a1 = a1.detach()
+        # masking dead units
+        a1 = self._maskingActions(s1, a1)
 
         # target critic (1)
         q_next1, _ = self.target_critic1.forward(s1, a1)
@@ -159,7 +181,8 @@ class Trainer:
         critic_TDLoss = torch.nn.SmoothL1Loss()(y_predicted, y_expected)
         critic_ModelLoss = torch.nn.L1Loss()(pred_r, r)
         loss_critic = critic_TDLoss
-        loss_critic += critic_ModelLoss
+
+        loss_critic += critic_ModelLoss * 0.1
 
         # Update critic
         self.critic_optimizer.zero_grad()
@@ -169,9 +192,13 @@ class Trainer:
 
         # ---------------------- optimize actor ----------------------
         pred_a0, pred_s1, _ = self.actor.forward(s0)
+        # masking dead units
+        pred_a0 = self._maskingActions(s0, pred_a0)
 
         # Loss: entropy for exploration
-        # entropy = torch.sum(pred_a0[:, :, 2:] * torch.log(pred_a0[:, :, 2:]), dim=-1).mean()
+        entropy = torch.sum(pred_a0[:, :, 4:] * torch.log(pred_a0[:, :, 4:]), dim=-1)
+        entropy[torch.isnan(entropy)] = 0
+        entropy = entropy.mean()
 
         # Loss: regularization
         l2_reg = torch.cuda.FloatTensor(1)
@@ -185,13 +212,16 @@ class Trainer:
         actor_maxQ = -1 * Q.mean()
 
         # Loss: env loss
+        # discard dead units
+        s1 = self._maskingPredState(state0=s0, state1=s1)
+        pred_s1 = self._maskingPredState(state0=s0, state1=pred_s1)
         actor_ModelLoss = torch.nn.L1Loss()(pred_s1, s1)
 
         # Sum. Loss
         loss_actor = actor_maxQ
-        # loss_actor += entropy * 0.05  # <replace Gaussian noise>
+        loss_actor += entropy * 0.05  # <replace Gaussian noise>
         loss_actor += torch.squeeze(l2_reg) * 0.001
-        loss_actor += actor_ModelLoss
+        loss_actor += actor_ModelLoss * 0.1
 
         # Update actor
         self.actor_optimizer.zero_grad()
@@ -210,14 +240,16 @@ class Trainer:
 
         return loss_actor, loss_critic, critic_TDLoss, critic_ModelLoss, actor_maxQ, actor_ModelLoss
 
-    def save_models(self, episode_count):
+
+    def save_models(self):
         """
         saves the target actor and critic models
         :param episode_count: the count of episodes iterated
         :return:
         """
-        torch.save(self.target_actor.state_dict(), './Models/' + str(episode_count) + '_actor.pt')
-        torch.save(self.target_critic.state_dict(), './Models/' + str(episode_count) + '_critic.pt')
+        torch.save(self.target_actor.state_dict(), 'actor.pt')
+        torch.save(self.target_critic1.state_dict(), 'critic1.pt')
+        torch.save(self.target_critic2.state_dict(), 'critic2.pt')
         print('Models saved successfully')
 
     def load_models(self, episode):
@@ -226,10 +258,16 @@ class Trainer:
         :param episode: the count of episodes iterated (used to find the file name)
         :return:
         """
-        self.actor.load_state_dict(torch.load('./Models/' + str(episode) + '_actor.pt'))
-        self.critic.load_state_dict(torch.load('./Models/' + str(episode) + '_critic.pt'))
+
+        self.actor.load_state_dict(torch.load('actor.pt'))
         self.hard_update(self.target_actor, self.actor)
-        self.hard_update(self.target_critic, self.critic)
+
+        self.critic.load_state_dict(torch.load('critic1.pt'))
+        self.hard_update(self.target_critic1, self.critic)
+
+        self.critic.load_state_dict(torch.load('critic2.pt'))
+        self.hard_update(self.target_critic2, self.critic)
+
         print('Models loaded succesfully')
 
     def save_training_checkpoint(self, state, is_best, episode_count):
