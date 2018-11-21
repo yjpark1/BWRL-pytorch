@@ -24,11 +24,11 @@ class Trainer:
         self.iter = 0
         self.actor = actor.to(self.device)
         self.target_actor = copy.deepcopy(actor).to(self.device)
-        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), arglist.learning_rate)
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), arglist.critic_learning_rate)
 
         self.critic = critic.to(self.device)
         self.target_critic = copy.deepcopy(critic).to(self.device)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), arglist.learning_rate)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), arglist.actor_learning_rate)
 
         self.target_actor.eval()
         self.target_critic.eval()
