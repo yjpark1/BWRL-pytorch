@@ -352,7 +352,7 @@ class StarCraftEnvironment(object):
         # reward += (is_attack - is_underattack) / 2.
 
         # 3. change ratio hp (-1, 1)
-        reward += (-0.4 * delta_ally + 0.6 * delta_enemy) * 2
+        reward += -delta_ally + delta_enemy
 
         # 4. dead unit handling (-4, 3)
         # reward += (-0.4 * num_dead_ally + 0.6 * num_dead_enemy)
